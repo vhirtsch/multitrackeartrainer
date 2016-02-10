@@ -9,6 +9,7 @@ var Fader = function(_pos, _height, _index){
 
 	this.display = function(){
 		stroke(255);
+		fill(255);
 		rectMode(CENTER);
 		line(this.pos.x, this.pos.y-this.h, this.pos.x, this.pos.y+this.h);
 		rect(this.handlepos.x, this.handlepos.y, this.handlewidth, this.handleheight);
@@ -18,8 +19,9 @@ var Fader = function(_pos, _height, _index){
 		}
 
 		this.handlepos.y = constrain(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h);
-		var volume = map(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h, 1, 0);
-		samples[this.index].setVolume(volume);
+		var vol = map(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h, 0, -100);
+		if(!isQuestion)
+			samples[this.index].volume.value = vol;
 	}
 
 	this.moveFader = function(){
