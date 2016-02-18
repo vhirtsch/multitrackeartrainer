@@ -31,15 +31,12 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 	}
 
 	this.updateEQ = function(value){
-		console.log('updated value',map(value, this.min, this.max, -15, 15));
 		if(this.band == 0)
 			eq3[this.index].low.value = map(value, this.min, this.max, -15, 15);
 		else if(this.band == 1)
 			eq3[this.index].mid.value = map(value, this.min, this.max, -15, 15);
 		else
 			eq3[this.index].high.value = map(value, this.min, this.max, -15, 15);
-
-		console.log('low',eq3[this.index].low);
 	}
 
 	this.getPosition = function(){

@@ -2,7 +2,7 @@ var Fader = function(_pos, _height, _index){
 	this.index = _index;
 	this.pos = _pos;
 	this.h = _height;
-	this.handlepos = createVector(_pos.x, _pos.y + _height);
+	this.handlepos = createVector(_pos.x, _pos.y - _height*0.75);
 	this.handlewidth = width*0.01;
 	this.handleheight = height*0.01;
 	this.ishandled = false;
@@ -20,8 +20,11 @@ var Fader = function(_pos, _height, _index){
 
 		this.handlepos.y = constrain(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h);
 		var vol = map(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h, 0, -100);
-		if(!isQuestion)
+
+		if(!isQuestion && !buttons_mute[this.index].isMuted){
 			samples[this.index].volume.value = vol;
+			// text(parseInt(samples[this.index].volume.value), this.pos.x, this.pos.y);
+		}
 	}
 
 	this.moveFader = function(){

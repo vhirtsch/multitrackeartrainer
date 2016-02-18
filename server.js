@@ -1,9 +1,11 @@
 var http = require('http');
 var fs = require('fs');
 
+var port = 8080;
+
 var httpServer = http.createServer(requestHandler);
-httpServer.listen(8080, function(){
-	console.log('server started on port 80');
+httpServer.listen(port, function(){
+	console.log('server started on port', port);
 });
 
 function requestHandler(request, response){
@@ -11,7 +13,7 @@ function requestHandler(request, response){
 	fs.readFile('public'+request.url, function(err, data){
 		if(err){
 			response.writeHead(500);
-			return response.end('Error loading canvas_socket.html');
+			return response.end('please specify a route');
 		}
 
 		response.writeHead(200); //200 is success code
