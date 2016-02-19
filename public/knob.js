@@ -24,10 +24,10 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 			this.rotation = map((mouseX - this.pos.x), -this.pos.x*0.125, (width-this.pos.x)*0.125, this.min, this.max);
 			this.rotation = min(max(this.rotation, this.min), this.max);
 
-			if(this.type == "eq3" && !isQuestion)
+			if(this.type == "eq3" && isUser)
 				this.updateEQ(this.rotation);
 
-			if(this.type == "pan" && !isQuestion)
+			if(this.type == "pan" && isUser)
 				this.updatePan(this.rotation);
 		}
 	}

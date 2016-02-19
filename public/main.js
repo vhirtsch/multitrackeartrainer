@@ -20,8 +20,9 @@ var button_question;
 var button_response;
 var button_reset;
 var button_play;
+var button_stop;
 
-var isQuestion = false;
+var isUser = false;
 
 
 //POSITION
@@ -75,17 +76,9 @@ function setup(){
 			"url" : "./data/"+i+".wav",
 			"autostart" : false,
 			"loop" : true,
-			"volume" : -1000
+			"volume" : -10
 		}).toMaster();
 	}
-
-	//WAIT BEFORE STARTING PLAYBACK
-	// var delay = 6000;
-	// setTimeout(function(){
-	// 	for(var i = 0; i < samples.length; i++){
-	// 		samples[i].start();
-	// 	}
-	// }, delay);
 
 
 	button_bypass = new Button("Bypass", "bypass", "channel", createVector(width*0.3, channels_y), width*0.1, height*0.075,  height*0.03);
@@ -98,7 +91,8 @@ function setup(){
 	buttons_toggle_channel.push(button_response);
 
 	button_reset = new Button("Reset", "reset-question", "reset", createVector(width*0.85, channels_y), width*0.05, height*0.05, height*0.025);
-	button_play = new Button("Play", "play", "play", createVector(width*0.15, channels_y), width*0.05, height*0.05, height*0.025);
+	button_play = new Button("Play", "play", "play", createVector(width*0.15, channels_y*0.9), width*0.05, height*0.035, height*0.025);
+	button_stop = new Button("Stop", "stop", "stop", createVector(width*0.15, channels_y*1.1), width*0.05, height*0.035, height*0.025);
 }
 
 function draw(){
@@ -110,7 +104,7 @@ function draw(){
 		fill(255);
 		// text(level_meters.getValue(), left_margin+spacing*i*0.9, height*0.8);
 
-		if(!isQuestion){
+		if(isUser){
 			buttons_solo[i].display();
 			buttons_solo[i].update();
 
@@ -132,12 +126,14 @@ function draw(){
 	button_response.display();
 	button_reset.display();
 	button_play.display();
+	button_stop.display();
 
 	button_bypass.update();
 	button_question.update();
 	button_response.update();
 	button_reset.update();
 	button_play.update();
+	button_stop.update();
 
 	//TITLE
 	fill(255);
@@ -193,7 +189,7 @@ function disconnectAll(){
 		buttons_solo[i].isSelected = false;
 		samples[i].volume.value = buttons_mute[i].lastVolumeValue;
 	}
-	isQuestion = false;
+	isUser = false;
 }
 
 function connectRandom(){
@@ -201,14 +197,14 @@ function connectRandom(){
 		samples[i].disconnect();
 		samples[i].connect(eq3_question[i]).toMaster();
 	}
-	isQuestion = true;
+	isUser = false;
 }
 
 function connectUser(){
 	for(var i = 0; i < track_number; i++){
 		samples[i].connect(eq3[i]).connect(pan[i]).toMaster();
 	}
-	isQuestion = false;
+	isUser = true;
 }
 
 function setRandomValues(){
@@ -222,6 +218,12 @@ function setRandomValues(){
 function playSamples(){
 	for(var i = 0; i < samples.length; i++){
 		samples[i].start();
+	}
+}
+
+function stopSamples(){
+	for(var i = 0; i < samples.length; i++){
+		samples[i].stop();
 	}
 }
 

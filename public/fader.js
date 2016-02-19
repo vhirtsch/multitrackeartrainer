@@ -21,7 +21,7 @@ var Fader = function(_pos, _height, _index){
 		this.handlepos.y = constrain(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h);
 		var vol = map(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h, 0, -100);
 
-		if(!isQuestion && !buttons_mute[this.index].isMuted){
+		if(isUser && !buttons_mute[this.index].isMuted){
 			samples[this.index].volume.value = vol;
 			// text(parseInt(samples[this.index].volume.value), this.pos.x, this.pos.y);
 		}

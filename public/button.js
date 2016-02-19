@@ -75,6 +75,8 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 								setRandomValues();
 							}else if(this.act == "play"){
 								playSamples();
+							}else if(this.act == 'stop'){
+								stopSamples();
 							}
 						}
 					}else{ //THIS HAPPENS ON MOUSE RELEASE - MUTE AND SOLO
