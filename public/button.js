@@ -1,8 +1,8 @@
-var Button = function(_name, _action, _type, _pos, _w, _h, _i){
+var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 	this.pos = _pos;
 	this.n = _name;
 	this.act = _action;
-	this.typ = _type;
+	this.type = _type;
 	this.stroke_col = 255;
 	this.fill_col = 0;
 	this.isMuted = false;
@@ -17,8 +17,10 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _i){
 	this.w = _w;
 	this.h = _h;
 
+	this.font_size = _font_size
+
 	this.update = function(){
-		if(this.typ != 'mute')
+		if(this.type != 'mute' && this.type != 'solo')
 			this.listen();
 
 		if(this.isSelected){
@@ -29,13 +31,14 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _i){
 			this.fill_col = 0;
 		}
 
-		if(this.n == "Reset")
+		if(this.n == "Reset" || this.n == "Play")
 			this.isSelected = false;
 	}
 
 	this.display = function(){
 		rectMode(CENTER);
 		textAlign(CENTER, CENTER);
+		textSize(this.font_size);
 		stroke(this.stroke_col);
 		fill(this.fill_col);
 
@@ -53,7 +56,8 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _i){
 				if(mouseY < this.pos.y + this.h*0.5 && mouseY > this.pos.y - this.h*0.5){
 					if(mouseIsPressed){
 						if(!this.isSelected){
-							if(this.typ == 'channel'){
+							this.isSelected = true;
+							if(this.type == 'channel'){
 								for(var i = 0; i < buttons_toggle_channel.length; i++){
 									buttons_toggle_channel[i].isSelected = false;
 									if(buttons_toggle_channel[i] == this)
@@ -69,10 +73,12 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _i){
 								connectUser();
 							else if(this.act == "reset-question"){
 								setRandomValues();
+							}else if(this.act == "play"){
+								playSamples();
 							}
 						}
-					}else{
-						if(this.typ == 'mute'){
+					}else{ //THIS HAPPENS ON MOUSE RELEASE - MUTE AND SOLO
+						if(this.type == 'mute'){
 							this.isSelected = !this.isSelected;
 							this.isMuted = !this.isMuted;
 
@@ -84,6 +90,37 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _i){
 								samples[this.index].volume.value = -100;
 							}else{
 								samples[this.index].volume.value = this.lastVolumeValue;
+							}
+						}
+
+						if(this.type == 'solo'){
+							if(!this.isSelected){
+
+								this.isSelected = true;
+
+								for(var i = 0; i < buttons_mute.length; i++){
+									if(i != this.index){ //mute all other buttons
+										if(samples[this.index].volume.value > -200)
+											buttons_mute[i].lastVolumeValue = samples[i].volume.value;
+
+										samples[i].volume.value = -200;
+
+										buttons_mute[i].isMuted = true;
+										buttons_solo[i].isSelected = false;
+									}else{ //just in case our button is muted, we unmute it
+										if(buttons_mute[i].isMuted){
+											samples[this.index].volume.value = buttons_mute[i].lastVolumeValue;
+											buttons_mute[i].isMuted = false;
+											buttons_mute[i].isSelected = false;
+										}
+									}
+								}
+							}else{//if it is already selected, it means we have to deselect it and restore all other to their previous levels
+								for(var i = 0; i < buttons_mute.length; i++){
+									buttons_mute[i].isMuted = false;
+									samples[i].volume.value = buttons_mute[i].lastVolumeValue;
+								}
+								this.isSelected = false;
 							}
 						}
 					}
