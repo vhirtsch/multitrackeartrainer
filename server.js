@@ -1,5 +1,6 @@
 var http = require('http');
 var fs = require('fs');
+var url = require('url');
 
 var port = 8080;
 
@@ -8,15 +9,20 @@ httpServer.listen(port, function(){
 	console.log('server started on port', port);
 });
 
-function requestHandler(request, response){
-	console.log(request.url);
-	fs.readFile('public'+request.url, function(err, data){
+function requestHandler(req, res){
+	var parsedUrl = url.parse(req.url);
+	var path = parsedUrl.pathname;
+	if(path == '/'){
+		path = '/index.html';
+	}
+
+	fs.readFile('public' + path, function(err, data){
 		if(err){
-			response.writeHead(500);
-			return response.end('please specify a route');
+			res.writeHead(500);
+			return res.end('Error loading page',req.url);
 		}
 
-		response.writeHead(200); //200 is success code
-		response.end(data);
+		res.writeHead(200); //200 is success code
+		res.end(data);
 	});
 }
