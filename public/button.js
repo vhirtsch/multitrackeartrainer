@@ -9,6 +9,14 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 	this.lastVolumeValue = 0;
 	this.index = _i;
 
+	if(this.type != 'mute' && this.type != 'solo')
+		this.active = true;
+	else{
+		this.active = false;
+		this.stroke_col = 100;
+	}
+
+
 	this.isSelected = false;
 
 	if(this.n == "Bypass")
@@ -39,14 +47,27 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 		rectMode(CENTER);
 		textAlign(CENTER, CENTER);
 		textSize(this.font_size);
-		stroke(this.stroke_col);
-		fill(this.fill_col);
+
+		if(this.type == 'mute' || this.type == 'solo'){
+			fill(this.fill_col);
+			stroke(this.stroke_col);
+		}else{
+			fill(this.fill_col);
+			stroke(this.stroke_col);
+		}
 
 		push();
+
 		translate(this.pos.x, this.pos.y);
 		rect(0, 0, this.w, this.h);
-		fill(abs(255-this.fill_col));
-		stroke(abs(255-this.stroke_col));
+		if(this.type == 'mute' || this.type == 'solo'){
+			fill(abs(255-this.fill_col));
+			stroke(abs(255-this.stroke_col));
+		}else{
+			fill(abs(255-this.fill_col));
+			stroke(abs(255-this.stroke_col));
+		}
+
 		text(this.n, 0, 0);
 		pop();
 	}

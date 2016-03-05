@@ -7,9 +7,12 @@ var Fader = function(_pos, _height, _index){
 	this.handleheight = height*0.01;
 	this.ishandled = false;
 
+	this.active = false;
+	this.col = 100;
+
 	this.display = function(){
-		stroke(255);
-		fill(255);
+		stroke(this.col);
+		fill(this.col);
 		rectMode(CENTER);
 		line(this.pos.x, this.pos.y-this.h, this.pos.x, this.pos.y+this.h);
 		rect(this.handlepos.x, this.handlepos.y, this.handlewidth, this.handleheight);

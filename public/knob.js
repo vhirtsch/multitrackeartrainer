@@ -7,6 +7,9 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 	this.ishandled = false;
 	this.type = _type;
 
+	this.active = false;
+	this.col = 100;
+
 	if(this.band == 0)
 		this.name = 'low';
 	else if(this.band == 1)
@@ -14,7 +17,7 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 	else if(this.band == 2)
 		this.name = 'high';
 	else
-		this.name = 'panning';
+		this.name = 'pan';
 
 	this.min = -radians(135);
 	this.max = radians(135);
@@ -36,11 +39,20 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 		push();
 		translate(this.pos.x, this.pos.y);
 		noStroke();
-		fill(255);
+		fill(this.col);
 		text(this.name, 0, -20);
 
+		if(this.type == 'eq3'){
+			if(this.band == 0)
+				text(parseInt(eq3[this.index].low.value), 0, 15);
+			else if(this.band == 1)
+				text(parseInt(eq3[this.index].mid.value), 0, 15);
+			else
+				text(parseInt(eq3[this.index].high.value), 0, 15);
+		}
+
 		rotate(this.rotation);
-		stroke(255);
+		stroke(this.col);
 		noFill();
 		ellipse(0, 0, this.rad, this.rad);
 		point(0, 0);
@@ -55,6 +67,8 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 			eq3[this.index].mid.value = map(_value, this.min, this.max, -15, 15);
 		else
 			eq3[this.index].high.value = map(_value, this.min, this.max, -15, 15);
+
+			//TODO add 5 and 6 for crossover value between low and mid and mid and high
 	}
 
 	this.updatePan = function(_value){

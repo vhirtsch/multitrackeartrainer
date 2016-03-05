@@ -1,0 +1,21 @@
+body{
+  margin:0;padding:0;background-color: black; color:white;font-family: Trebuchet MS;
+}
+
+h1{
+  width: 30%;
+  left:40%;
+  margin: auto;
+}
+
+a{
+  color:white;
+}
+
+#module{
+  color:white;
+  text-align: left;
+  width: 20%;
+  left: 45%;
+  margin: auto;
+}

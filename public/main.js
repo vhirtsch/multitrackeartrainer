@@ -1,5 +1,7 @@
 // TODO: have a level meter
 
+var active_channels_indexes = [];
+
 var faders = [];
 var faders_volume = [];
 var knobs_eq = [];
@@ -10,8 +12,13 @@ var buttons_solo = [];
 
 var samples = [];
 var eq3_question = [];
+var pan_question = [];
+
 var eq3 = [];
 var pan = [];
+
+var channel_label = [];
+
 var level_meters = [];
 
 var buttons_toggle_channel = [];
@@ -23,7 +30,14 @@ var button_play;
 var button_stop;
 
 var isUser = false;
+var canShowQuestion = false;
+var canShowResponse = false;
 
+var question_eq_min = -10;
+var question_eq_max = 10;
+
+var question_fader_min = -50;
+var question_fader_max = 0;
 
 //POSITION
 var left_margin;
@@ -63,12 +77,13 @@ function setup(){
 
 	//SET UP AUDIO PROCESSING OBJECTS
 	for(var i = 0; i < track_number; i++){
+		channel_label[i] = 'channel '+(i+1);
 		faders_volume[i] = new Tone.Volume(-10).toMaster();
 		pan[i] = new Tone.Panner(0.5).toMaster();
-
-		eq3_question[i] = new Tone.EQ3(random(-10, 10), random(-10, 10), random(-10, 10)).toMaster();
-
 		eq3[i] = new Tone.EQ3(0, 0, 0).toMaster();
+
+		pan_question[i] = new Tone.Panner(0.5).toMaster();
+		eq3_question[i] = new Tone.EQ3(0, 0, 0).toMaster();
 
 		// level_meters[i] = new Tone.Meter();
 
@@ -80,6 +95,21 @@ function setup(){
 		}).toMaster();
 	}
 
+	for(var i = 0; i < active_channels; i++){
+		setupActiveChannels();
+	}
+
+	if(current_module == "eq")
+		setTimeout(setupQuestionEQ, 100);
+
+	if(current_module == "level")
+		setTimeout(setupQuestionLevel, 100);
+
+	if(current_module == "pan")
+		setTimeout(setupQuestionPan, 100);
+
+	if(current_module == "mute")
+		setTimeout(setupQuestionMute, 100);
 
 	button_bypass = new Button("Bypass", "bypass", "channel", createVector(width*0.3, channels_y), width*0.1, height*0.075,  height*0.03);
 	buttons_toggle_channel.push(button_bypass);
@@ -100,6 +130,12 @@ function draw(){
 
 	for(var i = 0; i < faders.length; i++){
 		faders[i].display();
+		text(channel_label[i], faders[i].pos.x, height*0.8);
+		if(canShowQuestion){
+			text(parseInt(eq3_question[i].low.value), faders[i].pos.x, height*0.9);
+			text(parseInt(eq3_question[i].mid.value), faders[i].pos.x+10, height*0.92);
+			text(parseInt(eq3_question[i].high.value), faders[i].pos.x+20, height*0.95);
+		}
 
 		fill(255);
 		// text(level_meters.getValue(), left_margin+spacing*i*0.9, height*0.8);
@@ -141,6 +177,92 @@ function draw(){
 	text('Ain\'t no ear training hard enough', width*0.5, height*0.05);
 }
 
+function setupActiveChannels(){
+	if(active_channels_indexes.length < active_channels){
+		var ind = Math.floor(random(track_number));
+		var isAlreadyActive = false;
+		for(var i = 0; i < active_channels_indexes.length; i++){
+			if(active_channels_indexes[i] == ind)
+				isAlreadyActive = true;
+		}
+
+		if(!isAlreadyActive){
+			console.log('not active, activating',ind);
+			active_channels_indexes.push(ind);
+			faders[ind].active = true;
+			faders[ind].col = 255;
+
+			knobs_eq[ind][0].active = true;
+			knobs_eq[ind][0].col = 255;
+
+			knobs_eq[ind][1].active = true;
+			knobs_eq[ind][1].col = 255;
+
+			knobs_eq[ind][2].active = true;
+			knobs_eq[ind][2].col = 255;
+
+			knobs_pan[ind].active = true;
+			knobs_pan[ind].col = 255;
+
+			buttons_solo[ind].active = true;
+			buttons_mute[ind].active = true;
+		}else{
+			setTimeout(setupActiveChannels, 1);
+		}
+	}
+}
+
+function setupQuestionEQ(){
+	if(question_eq == 1){
+		for(var i = 0; i < active_channels; i++){
+			var ind = active_channels_indexes[i];
+			var r = Math.random();
+			if(r < 0.3)
+				eq3_question[ind] = new Tone.EQ3(random(question_eq_min, question_eq_max), 0, 0).toMaster();
+			else if(r < 0.6)
+				eq3_question[ind] = new Tone.EQ3(0, random(question_eq_min, question_eq_max), 0).toMaster();
+			else {
+				eq3_question[ind] = new Tone.EQ3(0, 0, random(question_eq_min, question_eq_max)).toMaster();
+			}
+		}
+	}else if(question_eq == 2){
+		for(var i = 0; i < active_channels; i++){
+			var ind = active_channels_indexes[i];
+			var r = Math.random();
+			if(r < 0.3)
+				eq3_question[ind] = new Tone.EQ3(random(question_eq_min, question_eq_max), random(question_eq_min, question_eq_max), 0).toMaster();
+			else if(r < 0.6)
+				eq3_question[ind] = new Tone.EQ3(0, random(question_eq_min, question_eq_max), random(question_eq_min, question_eq_max)).toMaster();
+			else {
+				eq3_question[ind] = new Tone.EQ3(random(question_eq_min, question_eq_max), 0, random(question_eq_min, question_eq_max)).toMaster();
+			}
+		}
+	}else{
+		eq3_question[i] = new Tone.EQ3(random(question_eq_min, question_eq_max), random(question_eq_min, question_eq_max), random(question_eq_min, question_eq_max)).toMaster();
+	}
+}
+
+function setupQuestionLevel(){
+	for(var i = 0; i < active_channels; i++){
+		var ind = active_channels[i];
+		//TODO: maybe it's better to actually figure out the fucking volume as a separate bus thing
+	}
+}
+
+function setupQuestionPan(){
+	for(var i = 0; i < active_channels; i++){
+		var ind = active_channels[i];
+		pan_question[ind].pan.value = random(0, 1);
+	}
+}
+
+function setupQuestionMute(){
+	for(var i = 0; i < active_channels; i++){
+		var ind = active_channels[i];
+		// TODO: have a question version of mute...
+	}
+}
+
 function mousePressed(){
 	for(var i = 0; i < track_number; i++){
 		if(mouseX < faders[i].getHandlePos().x + faders[i].getHandleWidth() && mouseX > faders[i].getHandlePos().x - faders[i].getHandleWidth()){
@@ -173,10 +295,12 @@ function mousePressed(){
 }
 
 function keyPressed(){
-	if(key == ' '){
-		for(var i = 0; i < faders_volume.length; i++){
-			console.log(faders_volume[i].volume);
-		}
+	if(key == 'q' || key == 'Q'){
+		canShowQuestion = !canShowQuestion;
+	}
+
+	if(key == 'r' || key == 'R'){
+		canShowResponse = !canShowResponse;
 	}
 }
 
@@ -195,13 +319,14 @@ function disconnectAll(){
 function connectRandom(){
 	for(var i = 0; i < track_number; i++){
 		samples[i].disconnect();
-		samples[i].connect(eq3_question[i]).toMaster();
+		samples[i].connect(eq3_question[i]).connect(pan_question[i]).toMaster();
 	}
 	isUser = false;
 }
 
 function connectUser(){
 	for(var i = 0; i < track_number; i++){
+		samples[i].disconnect();
 		samples[i].connect(eq3[i]).connect(pan[i]).toMaster();
 	}
 	isUser = true;
@@ -222,6 +347,7 @@ function playSamples(){
 }
 
 function stopSamples(){
+	console.log('stopping');
 	for(var i = 0; i < samples.length; i++){
 		samples[i].stop();
 	}
