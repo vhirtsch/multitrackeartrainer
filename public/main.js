@@ -174,7 +174,7 @@ function draw(){
 	//TITLE
 	fill(255);
 	textSize(height*0.05);
-	text('Ain\'t no ear training hard enough', width*0.5, height*0.05);
+	text('Ain\'t no ear training hard enough - '+current_module, width*0.5, height*0.05);
 }
 
 function setupActiveChannels(){
