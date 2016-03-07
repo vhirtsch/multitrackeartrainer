@@ -10,6 +10,8 @@ var Fader = function(_pos, _height, _index){
 	this.active = false;
 	this.col = 100;
 
+	this.vol = default_volume;
+
 	this.display = function(){
 		stroke(this.col);
 		fill(this.col);
@@ -17,17 +19,16 @@ var Fader = function(_pos, _height, _index){
 		line(this.pos.x, this.pos.y-this.h, this.pos.x, this.pos.y+this.h);
 		rect(this.handlepos.x, this.handlepos.y, this.handlewidth, this.handleheight);
 
-		if(this.ishandled && isUser){
+		if(this.ishandled && isUser  && this.active){
 			this.handlepos.y = mouseY;
+			this.handlepos.y = constrain(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h);
+			this.vol = map(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h, 0, -100);
 		}else if(!isUser){
 			this.handlepos.y = (this.pos.y - this.h*0.75);
 		}
 
-		this.handlepos.y = constrain(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h);
-		var vol = map(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h, 0, -100);
-
 		if(isUser && !buttons_mute[this.index].isMuted){
-			samples[this.index].volume.value = vol;
+			samples[this.index].volume.value = this.vol;
 			// text(parseInt(samples[this.index].volume.value), this.pos.x, this.pos.y);
 		}
 	}

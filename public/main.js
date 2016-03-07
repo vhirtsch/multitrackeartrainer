@@ -99,7 +99,7 @@ function setup(){
 			"url" : "./data/"+i+".wav",
 			"autostart" : false,
 			"loop" : true,
-			"volume" : -10
+			"volume" : default_volume
 		}).toMaster();
 	}
 
@@ -131,6 +131,9 @@ function setup(){
 	button_reset = new Button("Reset", "reset-question", "reset", createVector(width*0.85, channels_y), width*0.05, height*0.05, height*0.025);
 	button_play = new Button("Play", "play", "play", createVector(width*0.15, channels_y*0.9), width*0.05, height*0.035, height*0.025);
 	button_stop = new Button("Stop", "stop", "stop", createVector(width*0.15, channels_y*1.1), width*0.05, height*0.035, height*0.025);
+
+	//setting up the proper bypass routine
+	disconnectAll();
 }
 
 function draw(){
@@ -315,12 +318,10 @@ function keyPressed(){
 function disconnectAll(){
 	for(var i = 0; i < track_number; i++){
 		samples[i].disconnect();
+		samples[i].volume.value = default_volume;
 		samples[i].connect(eq3_bypass[i]).connect(pan_bypass[i]).toMaster();
 
-		if(buttons_mute[i].isMuted)
-			samples[i].volume.value = buttons_mute[i].lastVolumeValue;
 
-		samples[i].volume.value = default_volume;
 		buttons_mute[i].isMuted = false;
 		buttons_mute[i].isSelected = false;
 		buttons_solo[i].isSelected = false;
