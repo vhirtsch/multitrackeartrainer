@@ -17,8 +17,10 @@ var Fader = function(_pos, _height, _index){
 		line(this.pos.x, this.pos.y-this.h, this.pos.x, this.pos.y+this.h);
 		rect(this.handlepos.x, this.handlepos.y, this.handlewidth, this.handleheight);
 
-		if(this.ishandled){
+		if(this.ishandled && isUser){
 			this.handlepos.y = mouseY;
+		}else if(!isUser){
+			this.handlepos.y = (this.pos.y - this.h*0.75);
 		}
 
 		this.handlepos.y = constrain(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h);

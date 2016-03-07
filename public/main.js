@@ -17,6 +17,9 @@ var pan_question = [];
 var eq3 = [];
 var pan = [];
 
+var eq3_bypass = [];
+var pan_bypass = [];
+
 var channel_label = [];
 
 var level_meters = [];
@@ -32,6 +35,8 @@ var button_stop;
 var isUser = false;
 var canShowQuestion = false;
 var canShowResponse = false;
+
+var default_volume = -10;
 
 var question_eq_min = -10;
 var question_eq_max = 10;
@@ -78,12 +83,15 @@ function setup(){
 	//SET UP AUDIO PROCESSING OBJECTS
 	for(var i = 0; i < track_number; i++){
 		channel_label[i] = 'channel '+(i+1);
-		faders_volume[i] = new Tone.Volume(-10).toMaster();
+		// faders_volume[i] = new Tone.Volume(-10).toMaster();
 		pan[i] = new Tone.Panner(0.5).toMaster();
 		eq3[i] = new Tone.EQ3(0, 0, 0).toMaster();
 
 		pan_question[i] = new Tone.Panner(0.5).toMaster();
 		eq3_question[i] = new Tone.EQ3(0, 0, 0).toMaster();
+
+		eq3_bypass[i] = new Tone.Panner(0.5).toMaster();
+		pan_bypass[i] = new Tone.EQ3(0, 0, 0).toMaster();
 
 		// level_meters[i] = new Tone.Meter();
 
@@ -174,7 +182,7 @@ function draw(){
 	//TITLE
 	fill(255);
 	textSize(height*0.05);
-	text('Ain\'t no ear training hard enough - '+current_module, width*0.5, height*0.05);
+	text('Ain\'t no '+current_module+' training hard enough', width*0.5, height*0.05);
 }
 
 function setupActiveChannels(){
@@ -307,11 +315,16 @@ function keyPressed(){
 function disconnectAll(){
 	for(var i = 0; i < track_number; i++){
 		samples[i].disconnect();
-		samples[i].toMaster();
+		samples[i].connect(eq3_bypass[i]).connect(pan_bypass[i]).toMaster();
+
+		if(buttons_mute[i].isMuted)
+			samples[i].volume.value = buttons_mute[i].lastVolumeValue;
+
+		samples[i].volume.value = default_volume;
 		buttons_mute[i].isMuted = false;
 		buttons_mute[i].isSelected = false;
 		buttons_solo[i].isSelected = false;
-		samples[i].volume.value = buttons_mute[i].lastVolumeValue;
+
 	}
 	isUser = false;
 }
