@@ -28,21 +28,23 @@ var buttons_toggle_channel = [];
 var button_bypass;
 var button_question;
 var button_response;
-var button_reset;
+var button_check;
 var button_play;
-var button_stop;
 
-var isUser = false;
-var canShowQuestion = false;
-var canShowResponse = false;
+var isUser;
+var canShowQuestion;
+var canShowResponse;
 
-var default_volume = -10;
+var default_volume;
 
-var question_eq_min = -10;
-var question_eq_max = 10;
+var question_eq_min;
+var question_eq_max;
 
-var question_fader_min = -50;
-var question_fader_max = 0;
+var question_fader_min;
+var question_fader_max;
+
+var isPlaying;
+var mouseUp;
 
 //POSITION
 var left_margin;
@@ -56,6 +58,22 @@ function setup(){
 	var cnv = createCanvas(windowWidth, windowHeight);
 
 	textAlign(CENTER);
+
+	//setup
+	isUser = false;
+	canShowQuestion = false;
+	canShowResponse = false;
+
+	default_volume = -10;
+
+	question_eq_min = -10;
+	question_eq_max = 10;
+
+	question_fader_min = -50;
+	question_fader_max = 0;
+
+	isPlaying = false;
+	mouseUp = true;
 
 //SET UP POSITION VARIABLES
 	left_margin = width*0.15;
@@ -128,9 +146,8 @@ function setup(){
 	button_response = new Button("Response", "response", "channel", createVector(width*0.7, channels_y), width*0.1, height*0.075, height*0.03);
 	buttons_toggle_channel.push(button_response);
 
-	button_reset = new Button("Reset", "reset-question", "reset", createVector(width*0.85, channels_y), width*0.05, height*0.05, height*0.025);
+	button_check = new Button("Submit", "check", "check", createVector(width*0.85, channels_y), width*0.05, height*0.05, height*0.025);
 	button_play = new Button("Play", "play", "play", createVector(width*0.15, channels_y*0.9), width*0.05, height*0.035, height*0.025);
-	button_stop = new Button("Stop", "stop", "stop", createVector(width*0.15, channels_y*1.1), width*0.05, height*0.035, height*0.025);
 
 	//setting up the proper bypass routine
 	disconnectAll();
@@ -141,46 +158,69 @@ function draw(){
 
 	for(var i = 0; i < faders.length; i++){
 		faders[i].display();
+		noStroke();
 		text(channel_label[i], faders[i].pos.x, height*0.8);
 		if(canShowQuestion){
-			text(parseInt(eq3_question[i].low.value), faders[i].pos.x, height*0.9);
-			text(parseInt(eq3_question[i].mid.value), faders[i].pos.x+10, height*0.92);
-			text(parseInt(eq3_question[i].high.value), faders[i].pos.x+20, height*0.95);
+			text('low - '+parseInt(eq3_question[i].low.value), faders[i].pos.x, height*0.85);
+			text('mid - '+parseInt(eq3_question[i].mid.value), faders[i].pos.x+10, height*0.875);
+			text('high - '+parseInt(eq3_question[i].high.value), faders[i].pos.x+20, height*0.9);
+
+			if(abs(eq3_question[i].low.value - eq3[i].low.value) < 1){
+				fill(0, 150, 0);
+				text('good!', faders[i].pos.x, height*0.92);
+			} else {
+				fill(150, 0, 0);
+				text('too far!', faders[i].pos.x, height*0.92);
+			}
+			if(abs(eq3_question[i].mid.value - eq3[i].mid.value) < 1){
+				fill(0, 150, 0);
+				text('good!', faders[i].pos.x+10, height*0.95);
+			} else {
+				fill(150, 0, 0);
+				text('too far!', faders[i].pos.x+10, height*0.95);
+			}
+
+			if(abs(eq3_question[i].high.value - eq3[i].high.value) < 1){
+				fill(0, 150, 0);
+				text('good!', faders[i].pos.x+20, height*0.98);
+			} else {
+				fill(150, 0, 0);
+				text('too far!', faders[i].pos.x+20, height*0.98);
+			}
+
 		}
 
 		fill(255);
 		// text(level_meters.getValue(), left_margin+spacing*i*0.9, height*0.8);
 
 		if(isUser){
-			buttons_solo[i].display();
-			buttons_solo[i].update();
-
-			buttons_mute[i].display();
-			buttons_mute[i].update();
-
-			knobs_pan[i].display();
-			knobs_pan[i].update();
-
 			for(var j = 0; j < 3; j++){
 				knobs_eq[i][j].display();
 				knobs_eq[i][j].update();
 			}
 		}
+
+		buttons_solo[i].display();
+		buttons_solo[i].update();
+
+		buttons_mute[i].display();
+		buttons_mute[i].update();
+
+		knobs_pan[i].display();
+		knobs_pan[i].update();
 	}
 
 	button_bypass.display();
 	button_question.display();
 	button_response.display();
-	button_reset.display();
+	button_check.display();
 	button_play.display();
-	button_stop.display();
 
 	button_bypass.update();
 	button_question.update();
 	button_response.update();
-	button_reset.update();
+	button_check.update();
 	button_play.update();
-	button_stop.update();
 
 	//TITLE
 	fill(255);
@@ -310,8 +350,8 @@ function keyPressed(){
 		canShowQuestion = !canShowQuestion;
 	}
 
-	if(key == 'r' || key == 'R'){
-		canShowResponse = !canShowResponse;
+	if(key == ' '){
+		togglePlay();
 	}
 }
 
@@ -346,11 +386,37 @@ function connectUser(){
 	isUser = true;
 }
 
+function checkAnswers(){
+	canShowQuestion = true;
+	button_check.state = 1;
+	button_check.n = 'next';
+}
+
+function resetQuestions(){
+	canShowQuestion = false;
+	setupQuestionEQ();
+	button_check.state = 0;
+	button_check.n = 'submit';
+	console.log('again');
+}
+
 function setRandomValues(){
 	for(var i = 0; i < track_number; i++){
 		eq3_question[i].low.value = random(-10, 10);
 		eq3_question[i].mid.value = random(-10, 10);
 		eq3_question[i].high.value = random(-10, 10);
+	}
+}
+
+function togglePlay(){
+	if(!isPlaying){
+		playSamples();
+		button_play.n = 'stop';
+		isPlaying = true;
+	}else{
+		stopSamples();
+		button_play.n  = 'play';
+		isPlaying = false;
 	}
 }
 
@@ -368,6 +434,7 @@ function stopSamples(){
 }
 
 function mouseReleased(){
+	mouseUp = true;
 	for(var i = 0; i < track_number; i++){
 		buttons_mute[i].listen();
 		buttons_solo[i].listen();
