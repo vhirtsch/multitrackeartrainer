@@ -13,7 +13,7 @@ function requestHandler(req, res){
 	var parsedUrl = url.parse(req.url);
 	var path = parsedUrl.pathname;
 	if(path == '/'){
-		path = '/index.html';
+		path = '/multitrack-eartrainer/index.html';
 	}
 
 	fs.readFile('public' + path, function(err, data){
