@@ -9,6 +9,7 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 
 	this.active = false;
 	this.col = 100;
+	this.result_col = this.col;
 
 	if(this.band == 0)
 		this.name = 'low';
@@ -23,7 +24,7 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 	this.max = radians(135);
 
 	this.update = function(){
-		if(this.ishandled){
+		if(this.ishandled && this.active){
 			this.rotation = map((mouseX - this.pos.x), -this.pos.x*0.125, (width-this.pos.x)*0.125, this.min, this.max);
 			this.rotation = min(max(this.rotation, this.min), this.max);
 
@@ -39,7 +40,12 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 		push();
 		translate(this.pos.x, this.pos.y);
 		noStroke();
-		fill(this.col);
+		if(!canShowQuestion){
+			fill(this.col);
+		}else{
+			fill(this.result_col);
+		}
+
 		text(this.name, 0, -20);
 
 		if(this.type == 'eq3'){
@@ -52,7 +58,11 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 		}
 
 		rotate(this.rotation);
-		stroke(this.col);
+		if(!canShowQuestion){
+			stroke(this.col);
+		}else{
+			stroke(this.result_col);
+		}
 		noFill();
 		ellipse(0, 0, this.rad, this.rad);
 		point(0, 0);

@@ -9,6 +9,7 @@ var Fader = function(_pos, _height, _index){
 
 	this.active = false;
 	this.col = 100;
+	this.result_col = 255;
 
 	this.vol = default_volume;
 

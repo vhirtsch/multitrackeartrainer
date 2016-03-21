@@ -4,10 +4,17 @@
 	<script type="text/javascript" src="../libraries/p5.min.js"></script>
 	<script type="text/javascript" src="../libraries/Tone.min.js"></script>
 <script>
+var user_input_channels = prompt("active channels", "enter a number between 1 and 8");
+// TODO make sure no one writes shit
+var active_channels = Math.min(Math.max(parseInt(user_input_channels), 1), 8);
+
+var user_eq_channels = prompt("active EQs", "enter a number between 1 and 3");
+var question_eq = Math.min(Math.max(parseInt(user_eq_channels), 1), 3);
+
 var current_module = "eq";
 
-var active_channels = 5;
-var question_eq = 2;
+// var active_channels = 5;
+// var question_eq = 2;
 </script>
 <script type="text/javascript" src="main.js"></script>
 <script type="text/javascript" src="fader.js"></script>
