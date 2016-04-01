@@ -50,11 +50,11 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 
 		if(this.type == 'eq3'){
 			if(this.band == 0)
-				text(parseInt(eq3[this.index].low.value), 0, 15);
+				text(parseInt(eq3[this.index].low.value), 0, 20);
 			else if(this.band == 1)
-				text(parseInt(eq3[this.index].mid.value), 0, 15);
+				text(parseInt(eq3[this.index].mid.value), 0, 20);
 			else
-				text(parseInt(eq3[this.index].high.value), 0, 15);
+				text(parseInt(eq3[this.index].high.value), 0, 20);
 		}
 
 		rotate(this.rotation);

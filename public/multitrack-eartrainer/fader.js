@@ -12,6 +12,7 @@ var Fader = function(_pos, _height, _index){
 	this.result_col = 255;
 
 	this.vol = default_volume;
+	this.question_muted = false;
 
 	this.display = function(){
 		stroke(this.col);
@@ -23,7 +24,12 @@ var Fader = function(_pos, _height, _index){
 		if(this.ishandled && isUser  && this.active){
 			this.handlepos.y = mouseY;
 			this.handlepos.y = constrain(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h);
-			this.vol = map(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h, 0, -100);
+
+			if(this.question_muted)
+				this.vol = -100;
+			else
+				this.vol = map(this.handlepos.y, this.pos.y-this.h, this.pos.y+this.h, 0, -100);
+				
 		}else if(!isUser){
 			this.handlepos.y = (this.pos.y - this.h*0.75);
 		}

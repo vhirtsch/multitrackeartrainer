@@ -1,0 +1,17 @@
+body{
+  margin: 0;
+  padding: 0;
+}
+
+canvas{
+  z-index: -1;
+}
+
+input{
+  /*position: absolute;*/
+  z-index: 0;
+  top: 50%;
+  width: 8%;
+  height: 5%;
+  margin: 2%;
+}
