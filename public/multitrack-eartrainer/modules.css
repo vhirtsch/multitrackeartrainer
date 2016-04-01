@@ -15,3 +15,9 @@ input{
   height: 5%;
   margin: 2%;
 }
+
+a{
+  position: absolute;
+  top: 2%;
+  left: 2%;
+}

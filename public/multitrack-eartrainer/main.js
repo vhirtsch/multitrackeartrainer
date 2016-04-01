@@ -1,5 +1,7 @@
 // TODO: have a level meter
 
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
 var track_number = 6;
 
 var active_channels_indexes = [];
@@ -62,8 +64,14 @@ var question_range_pan = 0.2;
 
 var result_colors = [];
 
+//Instructions
+var canShowInstructions = true;
+
 function setup(){
-	var cnv = createCanvas(windowWidth, windowHeight);
+
+	var back = createA('index.html', 'back to main page');
+
+	var cnv = createCanvas(windowWidth, windowHeight*0.85);
 
 	textAlign(CENTER);
 	result_colors[0] = color(255, 0, 0);
@@ -119,6 +127,9 @@ function setup(){
 	for(var i = 0; i < track_number; i++){
 		channel_label[i] = '--'+(i+1);
 		// faders_volume[i] = new Tone.Volume(-10).toMaster();
+
+	// var biq = audioCtx.createBiquadFilter();
+
 		pan[i] = new Tone.Panner(0.5).toMaster();
 		eq3[i] = new Tone.EQ3(0, 0, 0).toMaster();
 
@@ -156,7 +167,6 @@ function setup(){
 
 	if(current_module == "mute")
 		setTimeout(setupQuestionMute, 1000);
-
 
 
 	//setting up the proper bypass routine
@@ -261,6 +271,22 @@ function draw(){
 	fill(255);
 	textSize(height*0.05);
 	text('Ain\'t no '+current_module+' training hard enough', width*0.5, height*0.05);
+
+
+	if(canShowInstructions)
+		showInstructions();
+}
+
+function showInstructions(){
+
+	fill(0);
+	stroke(255);
+	rect(width*0.5, height*0.5, width*0.8, height*0.8);
+	fill(255);
+	text('INSTRUCTIONS', width*0.5, height*0.3);
+
+	text('press C to continue', width*0.5, height*0.7);
+
 }
 
 function setupActiveChannels(){
@@ -346,14 +372,16 @@ function setupQuestionPan(){
 }
 
 function setupQuestionMute(){
-	for(var i = 0; i < active_channels; i++){
-		var ind = active_channels_indexes[i];
-		faders[ind].question_muted = true;
-	}
+	// for(var i = 0; i < active_channels; i++){
+	// 	var ind = active_channels_indexes[i];
+	// 	faders[ind].question_muted = true;
+	// }
+
+	faders[Math.floor(Math.random()*active_channels_indexes.length)].question_muted = true;
 }
 
 function setupButtons(){
-	button_bypass = new Button("Bypass", "bypass", "channel", createVector(width*0.3, channels_y), width*0.1, height*0.075,  height*0.03);
+	button_bypass = new Button("Practice", "bypass", "channel", createVector(width*0.3, channels_y), width*0.1, height*0.075,  height*0.03);
 	buttons_toggle_channel.push(button_bypass);
 
 	button_question = new Button("Question", "question", "channel", createVector(width*0.5, channels_y), width*0.1, height*0.075, height*0.03);
@@ -406,6 +434,8 @@ function keyPressed(){
 		togglePlay();
 	}
 
+	if(key == 'c' || key == 'C')
+		canShowInstructions = !canShowInstructions;
 
 }
 
@@ -512,13 +542,24 @@ function deactivateChannels(){
 
 function resetQuestions(){
 	canShowQuestion = false;
-	setupQuestionEQ();
+	if(current_module == "eq")
+		setupQuestionEQ();
+
+	if(current_module == "level")
+		setupQuestionLevel();
+
+	if(current_module == "pan")
+		setupQuestionPan();
+
+	if(current_module == "mute")
+		setupQuestionMute();
+
 	button_check.state = 0;
 	button_check.n = 'submit';
 
 	deactivateChannels();
 
-	active_channels = parseInt(random(1, 8));
+	// active_channels = parseInt(random(1, 8));
 	for(var i = 0; i < active_channels; i++){
 		setupActiveChannels();
 	}

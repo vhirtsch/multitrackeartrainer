@@ -21,7 +21,7 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 
 	this.isSelected = false;
 
-	if(this.n == "Bypass")
+	if(this.act == "bypass")
 	this.isSelected = true;
 
 	this.w = _w;
