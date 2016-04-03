@@ -37,6 +37,7 @@ var button_check;
 var button_play;
 
 var isUser;
+var isBypass = true;
 var canShowQuestion;
 var canShowResponse;
 
@@ -59,7 +60,7 @@ var pan_y;
 var faders_y;
 var spacing;
 
-var question_range_eq = 2;
+var question_range_eq = 200;
 var question_range_pan = 0.2;
 
 var result_colors = [];
@@ -95,25 +96,21 @@ function setup(){
 	mouseUp = true;
 
 //SET UP POSITION VARIABLES
-	left_margin = width*0.15;
+	left_margin = (width/track_number)*0.5;
 	channels_y = height*0.25;
-	eq_y = height*0.4;
+	eq_y = height*0.55;
 	pan_y = height*0.475;
 	faders_y = height*0.65;
-	spacing = width*0.1;
+	spacing = width/track_number;
 	toggle_y = height*0.52;
 
 //SET UP USER INTERFACE
 	for(var i = 0; i < track_number; i++){
 		faders[i] = new Fader(createVector(left_margin + i*spacing, faders_y), height*0.1, i);
 		buttons_mute[i] = new Button('M', 'mute', 'mute', createVector(left_margin-width*0.015 + i*spacing, toggle_y), width*0.02, height*0.03, height*0.015, i);
-		buttons_solo[i] = new Button('S', 'solo', 'solo', createVector(left_margin+width*0.015 + i*spacing, toggle_y), width*0.02, height*0.03, height*0.015, i);
+		buttons_solo[i] = new Button('Solo', 'solo', 'solo', createVector(left_margin + i*spacing, toggle_y), width*0.06, height*0.06, height*0.03, i);
 
-		knobs_eq[i] = [];
-		for(var j = 0; j < 3; j++){
-			knobs_eq[i][j] = new Knob(createVector(left_margin-width*0.025 + i*spacing + j * width*0.025, eq_y), height*0.025, i, j, "eq3");
-		}
-
+		knobs_eq[i] = new Knob(createVector(left_margin-width*0.025 + i*spacing + 1 * width*0.025, eq_y), height*0.05, i, 1, "eq3");
 		knobs_pan[i] = new Knob(createVector(left_margin-width*0.025 + i*spacing + width*0.025, pan_y), height*0.03, i, null, "pan");
 	}
 
@@ -131,13 +128,17 @@ function setup(){
 	// var biq = audioCtx.createBiquadFilter();
 
 		pan[i] = new Tone.Panner(0.5).toMaster();
-		eq3[i] = new Tone.EQ3(0, 0, 0).toMaster();
+		// eq3[i] = new Tone.EQ3(0, 0, 0).toMaster();
+		eq3[i] = new Tone.Filter(0, "peaking").toMaster();
+		eq3[i].gain.value = 6;
 
 		pan_question[i] = new Tone.Panner(0.5).toMaster();
-		eq3_question[i] = new Tone.EQ3(0, 0, 0).toMaster();
+		eq3_question[i] = new Tone.Filter(0, "peaking").toMaster();
+		eq3_question[i].gain.value = 6;
 
-		eq3_bypass[i] = new Tone.Panner(0.5).toMaster();
-		pan_bypass[i] = new Tone.EQ3(0, 0, 0).toMaster();
+		pan_bypass[i] = new Tone.Panner(0.5).toMaster();
+		eq3_bypass[i] = new Tone.Filter(0, "peaking").toMaster();
+		eq3_bypass[i].gain.value = 6;
 
 		// level_meters[i] = new Tone.Meter();
 
@@ -185,31 +186,14 @@ function draw(){
 		text(channel_label[i], faders[i].pos.x, height*0.8);
 		if(canShowQuestion && faders[i].active){
 			if(current_module == "eq"){
-				var l = 'low '+parseInt(eq3_question[i].low.value);
-				var m = 'mid '+parseInt(eq3_question[i].mid.value);
-				var h = 'high '+parseInt(eq3_question[i].high.value);
+				var freq = 'low '+parseInt(eq3_question[i].frequency.value);
 
-					if(abs(eq3_question[i].low.value - eq3[i].low.value) < question_range_eq){
+					if(abs(eq3_question[i].frequency.value - eq3[i].frequency.value) < question_range_eq){
 						fill(0, 150, 0);
-						text(l+' - good!', faders[i].pos.x, height*0.82);
+						text(freq+' - good!', faders[i].pos.x, height*0.82);
 					} else {
 						fill(150, 0, 0);
-						text(l+' - too far!', faders[i].pos.x, height*0.82);
-					}
-					if(abs(eq3_question[i].mid.value - eq3[i].mid.value) < question_range_eq){
-						fill(0, 150, 0);
-						text(m+' - good!', faders[i].pos.x, height*0.85);
-					} else {
-						fill(150, 0, 0);
-						text(m+' - too far!', faders[i].pos.x, height*0.85);
-					}
-
-					if(abs(eq3_question[i].high.value - eq3[i].high.value) < question_range_eq){
-						fill(0, 150, 0);
-						text(h+' - good!', faders[i].pos.x, height*0.88);
-					} else {
-						fill(150, 0, 0);
-						text(h+' - too far!', faders[i].pos.x, height*0.88);
+						text(freq+' - too far!', faders[i].pos.x, height*0.82);
 					}
 			}else if(current_module == "pan"){
 				if(abs(pan_question[i].value - pan[i].value) < question_range_pan){
@@ -234,10 +218,8 @@ function draw(){
 		// text(level_meters.getValue(), left_margin+spacing*i*0.9, height*0.8);
 		if(isUser){
 			if(current_module == "eq"){
-				for(var j = 0; j < 3; j++){
-					knobs_eq[i][j].display();
-					knobs_eq[i][j].update();
-				}
+				knobs_eq[i].display();
+				knobs_eq[i].update();
 			}
 
 			if(current_module == "mute"){
@@ -249,9 +231,11 @@ function draw(){
 				knobs_pan[i].display();
 				knobs_pan[i].update();
 			}
+		}
 
-			// buttons_solo[i].display();
-			// buttons_solo[i].update();
+		if(isBypass){
+			buttons_solo[i].display();
+			buttons_solo[i].update();
 		}
 	}
 
@@ -303,14 +287,8 @@ function setupActiveChannels(){
 			faders[ind].active = true;
 			faders[ind].col = 255;
 
-			knobs_eq[ind][0].active = true;
-			knobs_eq[ind][0].col = 255;
-
-			knobs_eq[ind][1].active = true;
-			knobs_eq[ind][1].col = 255;
-
-			knobs_eq[ind][2].active = true;
-			knobs_eq[ind][2].col = 255;
+			knobs_eq[ind].active = true;
+			knobs_eq[ind].col = 255;
 
 			knobs_pan[ind].active = true;
 			knobs_pan[ind].col = 255;
@@ -328,33 +306,10 @@ function updateChannelName(){
 }
 
 function setupQuestionEQ(){
-	if(question_eq == 1){
 		for(var i = 0; i < active_channels; i++){
 			var ind = active_channels_indexes[i];
-			var r = Math.random();
-			if(r < 0.3)
-				eq3_question[ind] = new Tone.EQ3(random(question_eq_min, question_eq_max), 0, 0).toMaster();
-			else if(r < 0.6)
-				eq3_question[ind] = new Tone.EQ3(0, random(question_eq_min, question_eq_max), 0).toMaster();
-			else {
-				eq3_question[ind] = new Tone.EQ3(0, 0, random(question_eq_min, question_eq_max)).toMaster();
-			}
+			eq3_question[ind].frequency.value = random(100, 16000);
 		}
-	}else if(question_eq == 2){
-		for(var i = 0; i < active_channels; i++){
-			var ind = active_channels_indexes[i];
-			var r = Math.random();
-			if(r < 0.3)
-				eq3_question[ind] = new Tone.EQ3(random(question_eq_min, question_eq_max), random(question_eq_min, question_eq_max), 0).toMaster();
-			else if(r < 0.6)
-				eq3_question[ind] = new Tone.EQ3(0, random(question_eq_min, question_eq_max), random(question_eq_min, question_eq_max)).toMaster();
-			else {
-				eq3_question[ind] = new Tone.EQ3(random(question_eq_min, question_eq_max), 0, random(question_eq_min, question_eq_max)).toMaster();
-			}
-		}
-	}else{
-		eq3_question[i] = new Tone.EQ3(random(question_eq_min, question_eq_max), random(question_eq_min, question_eq_max), random(question_eq_min, question_eq_max)).toMaster();
-	}
 }
 
 function setupQuestionLevel(){
@@ -412,15 +367,13 @@ function mousePressed(){
 			knobs_pan[i].ishandled = false;
 		}
 
-		for(var j = 0; j < 3; j++){
-			var k = knobs_eq[i][j]
-			if(mouseX < k.getPosition().x + k.getRad() && mouseX > k.getPosition().x - k.getRad()){
-				if(mouseY < k.getPosition().y + k.getRad() && mouseY > k.getPosition().y - k.getRad()){
-					k.ishandled = true;
-				}
-			}else{
-				k.ishandled = false;
+		var k = knobs_eq[i];
+		if(mouseX < k.getPosition().x + k.getRad() && mouseX > k.getPosition().x - k.getRad()){
+			if(mouseY < k.getPosition().y + k.getRad() && mouseY > k.getPosition().y - k.getRad()){
+				k.ishandled = true;
 			}
+		}else{
+			k.ishandled = false;
 		}
 	}
 }
@@ -452,6 +405,7 @@ function disconnectAll(){
 
 	}
 	isUser = false;
+	isBypass = true;
 }
 
 function connectRandom(){
@@ -460,6 +414,7 @@ function connectRandom(){
 		samples[i].connect(eq3_question[i]).connect(pan_question[i]).toMaster();
 	}
 	isUser = false;
+	isBypass = false;
 }
 
 function connectUser(){
@@ -468,42 +423,21 @@ function connectUser(){
 		samples[i].connect(eq3[i]).connect(pan[i]).toMaster();
 	}
 	isUser = true;
+	isBypass = false;
 }
 
 function checkAnswers(){
 	for(var i = 0; i < active_channels_indexes.length; i++){
 		// console.log('act',active_channels_indexes[i]);
 		if(current_module == "eq"){
-			if(abs(eq3_question[active_channels_indexes[i]].low.value - eq3[active_channels_indexes[i]].low.value) < question_range_eq){
-				knobs_eq[active_channels_indexes[i]][0].result_col = result_colors[2];
+			if(abs(eq3_question[active_channels_indexes[i]].frequency.value - eq3[active_channels_indexes[i]].frequency.value) < question_range_eq){
+				knobs_eq[active_channels_indexes[i]].result_col = result_colors[2];
 				// console.log('good');
-			}else if(abs(eq3_question[active_channels_indexes[i]].low.value - eq3[active_channels_indexes[i]].low.value) < question_range_eq*2){
-				knobs_eq[active_channels_indexes[i]][0].result_col = result_colors[1];
+			}else if(abs(eq3_question[active_channels_indexes[i]].frequency.value - eq3[active_channels_indexes[i]].frequency.value) < question_range_eq*2){
+				knobs_eq[active_channels_indexes[i]].result_col = result_colors[1];
 				// console.log('bad');
 			}else{
-				knobs_eq[active_channels_indexes[i]][0].result_col = result_colors[0];
-				// console.log('ugly');
-			}
-
-			if(abs(eq3_question[active_channels_indexes[i]].mid.value - eq3[active_channels_indexes[i]].mid.value) < question_range_eq){
-				knobs_eq[active_channels_indexes[i]][1].result_col = result_colors[2];
-				// console.log('good');
-			}else if(abs(eq3_question[active_channels_indexes[i]].mid.value - eq3[active_channels_indexes[i]].mid.value) < question_range_eq*2){
-				knobs_eq[active_channels_indexes[i]][1].result_col = result_colors[1];
-				// console.log('bad');
-			}else{
-				knobs_eq[active_channels_indexes[i]][1].result_col = result_colors[0];
-				// console.log('ugly');
-			}
-
-			if(abs(eq3_question[active_channels_indexes[i]].high.value - eq3[active_channels_indexes[i]].high.value) < question_range_eq){
-				knobs_eq[active_channels_indexes[i]][2].result_col = result_colors[2];
-				// console.log('good');
-			}else if(abs(eq3_question[active_channels_indexes[i]].high.value - eq3[active_channels_indexes[i]].high.value) < question_range_eq*2){
-				knobs_eq[active_channels_indexes[i]][2].result_col = result_colors[1];
-				// console.log('bad');
-			}else{
-				knobs_eq[active_channels_indexes[i]][2].result_col = result_colors[0];
+				knobs_eq[active_channels_indexes[i]].result_col = result_colors[0];
 				// console.log('ugly');
 			}
 		}
@@ -606,8 +540,6 @@ function mouseReleased(){
 		buttons_solo[i].listen();
 		faders[i].ishandled = false;
 		knobs_pan[i].ishandled = false;
-		for(var j = 0; j < 3; j++){
-			knobs_eq[i][j].ishandled = false;
-		}
+		knobs_eq[i].ishandled = false;
 	}
 }

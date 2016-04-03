@@ -11,12 +11,8 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 	this.col = 100;
 	this.result_col = this.col;
 
-	if(this.band == 0)
-		this.name = 'low';
-	else if(this.band == 1)
-		this.name = 'mid';
-	else if(this.band == 2)
-		this.name = 'high';
+	if(this.band == 1)
+		this.name = 'eq';
 	else
 		this.name = 'pan';
 
@@ -46,15 +42,10 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 			fill(this.result_col);
 		}
 
-		text(this.name, 0, -20);
+		text(this.name, 0, -40);
 
 		if(this.type == 'eq3'){
-			if(this.band == 0)
-				text(parseInt(eq3[this.index].low.value), 0, 20);
-			else if(this.band == 1)
-				text(parseInt(eq3[this.index].mid.value), 0, 20);
-			else
-				text(parseInt(eq3[this.index].high.value), 0, 20);
+			text(parseInt(eq3[this.index].frequency.value), 0, 50);
 		}
 
 		rotate(this.rotation);
@@ -63,22 +54,17 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 		}else{
 			stroke(this.result_col);
 		}
+		strokeWeight(4);
 		noFill();
 		ellipse(0, 0, this.rad, this.rad);
 		point(0, 0);
 		line(0, 0, 0, -this.rad*0.5);
 		pop();
+		strokeWeight(1);
 	}
 
 	this.updateEQ = function(_value){
-		if(this.band == 0)
-			eq3[this.index].low.value = map(_value, this.min, this.max, -15, 15);
-		else if(this.band == 1)
-			eq3[this.index].mid.value = map(_value, this.min, this.max, -15, 15);
-		else
-			eq3[this.index].high.value = map(_value, this.min, this.max, -15, 15);
-
-			//TODO add 5 and 6 for crossover value between low and mid and mid and high
+			eq3[this.index].frequency.value = map(_value, this.min, this.max, 20, 20000);
 	}
 
 	this.updatePan = function(_value){
