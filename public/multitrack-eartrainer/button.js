@@ -41,7 +41,7 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 			this.fill_col = 0;
 		}
 
-		if(this.act == "check" || this.act == "play")
+		if(this.act == "check" || this.act == "play" || this.act == 'recording')
 		this.isSelected = false;
 	}
 
@@ -102,6 +102,17 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 									resetQuestions();
 							}else if(this.act == "play"){
 								togglePlay();
+							}else if(this.act == 'recording'){
+								if(isBypass){
+									if(recordings[this.index].volume.value == 0){
+										recordings[this.index].volume.value = -200;
+									}else{
+										recordings[this.index].volume.value = 0;
+									}
+								}else if(isUser){
+
+										checkRecordingAnswer(this.index);
+								}
 							}
 							mouseUp = false;
 						}

@@ -4,6 +4,13 @@ var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 var track_number = 6;
 
+var recordings_number = 5;
+var recordings = [];
+var recordings_buttons = [];
+var recordings_names = ["A-B", "Close Mics", "NOS", "ORTF", "Room Mics"];
+var pickedRecording;
+var recording_answer;
+
 var active_channels_indexes = [];
 
 var text_inputs = [];
@@ -95,7 +102,7 @@ function setup(){
 	isPlaying = false;
 	mouseUp = true;
 
-//SET UP POSITION VARIABLES
+//SET UP POSITION VARIABLES FOR MIXER
 	left_margin = (width/track_number)*0.5;
 	channels_y = height*0.25;
 	eq_y = height*0.55;
@@ -103,6 +110,12 @@ function setup(){
 	faders_y = height*0.65;
 	spacing = width/track_number;
 	toggle_y = height*0.52;
+
+	if(current_module == "mic"){
+		left_margin = (width/recordings_number)*0.5;
+		spacing = width/recordings_number;
+		pickedRecording = Math.floor(Math.random()*recordings_number);
+	}
 
 //SET UP USER INTERFACE
 	for(var i = 0; i < track_number; i++){
@@ -114,79 +127,139 @@ function setup(){
 		knobs_pan[i] = new Knob(createVector(left_margin-width*0.025 + i*spacing + width*0.025, pan_y), height*0.03, i, null, "pan");
 	}
 
-	for(var i = 0; i < track_number; i++){
-		text_inputs[i] = createInput('CH #'+(i+1).toString());
-		text_inputs[i].id(i.toString());
-		text_inputs[i].input(updateChannelName);
-	}
 
-	//SET UP AUDIO PROCESSING OBJECTS
-	for(var i = 0; i < track_number; i++){
-		channel_label[i] = '--'+(i+1);
-		// faders_volume[i] = new Tone.Volume(-10).toMaster();
-
-	// var biq = audioCtx.createBiquadFilter();
-
-		pan[i] = new Tone.Panner(0.5).toMaster();
-		// eq3[i] = new Tone.EQ3(0, 0, 0).toMaster();
-		eq3[i] = new Tone.Filter(0, "peaking").toMaster();
-		eq3[i].gain.value = 6;
-
-		pan_question[i] = new Tone.Panner(0.5).toMaster();
-		eq3_question[i] = new Tone.Filter(0, "peaking").toMaster();
-		eq3_question[i].gain.value = 6;
-
-		pan_bypass[i] = new Tone.Panner(0.5).toMaster();
-		eq3_bypass[i] = new Tone.Filter(0, "peaking").toMaster();
-		eq3_bypass[i].gain.value = 6;
-
-		// level_meters[i] = new Tone.Meter();
-
-		samples[i] = new Tone.Player({
-			"url" : "./data/"+(i+1)+".wav",
-			"playbackRate" : 0,
-			"autostart" : true,
-			"loop" : true,
-			"volume" : default_volume
-		}).toMaster();
-	}
-
-	for(var i = 0; i < active_channels; i++){
-		setupActiveChannels();
-	}
 
 	setupButtons();
 
-	if(current_module == "eq")
-		setTimeout(setupQuestionEQ, 1000);
+	//SET UP AUDIO PROCESSING OBJECTS
+	if(current_module == "mic"){
+		for(var i = 0; i < recordings_number; i++){
+			recordings_buttons[i] = new Button(recordings_names[i], 'recording', 'recording', createVector(left_margin + i*spacing, toggle_y), width*0.06, height*0.06, height*0.03, i);
 
-	if(current_module == "level")
-		setTimeout(setupQuestionLevel, 1000);
+			recordings[i] = new Tone.Player({
+				"url" : "./data/recordings/"+i+".wav",
+				"playbackRate" : 1,
+				"autostart": true,
+				"loop" : true,
+				"volume" : -200
+			}).toMaster();
+		}
+	}else{
+		for(var i = 0; i < track_number; i++){
+			channel_label[i] = '--'+(i+1);
+			// faders_volume[i] = new Tone.Volume(-10).toMaster();
 
-	if(current_module == "pan")
-		setTimeout(setupQuestionPan, 1000);
 
-	if(current_module == "mute")
-		setTimeout(setupQuestionMute, 1000);
+			pan[i] = new Tone.Panner(0.5).toMaster();
+			// eq3[i] = new Tone.EQ3(0, 0, 0).toMaster();
+			eq3[i] = new Tone.Filter(0, "peaking").toMaster();
+			eq3[i].gain.value = 6;
+
+			pan_question[i] = new Tone.Panner(0.5).toMaster();
+			eq3_question[i] = new Tone.Filter(0, "peaking").toMaster();
+			eq3_question[i].gain.value = 6;
+
+			pan_bypass[i] = new Tone.Panner(0.5).toMaster();
+			eq3_bypass[i] = new Tone.Filter(0, "peaking").toMaster();
+			eq3_bypass[i].gain.value = 6;
+
+			samples[i] = new Tone.Player({
+				"url" : "./data/"+(i+1)+".wav",
+				"playbackRate" : 0,
+				"autostart" : true,
+				"loop" : true,
+				"volume" : default_volume
+			}).toMaster();
+
+			for(var i = 0; i < track_number; i++){
+				text_inputs[i] = createInput('CH #'+(i+1).toString());
+				text_inputs[i].id(i.toString());
+				text_inputs[i].input(updateChannelName);
+			}
+		}
+
+		for(var i = 0; i < active_channels; i++){
+			setupActiveChannels();
+		}
+
+		if(current_module == "eq")
+			setTimeout(setupQuestionEQ, 1000);
+
+		if(current_module == "level")
+			setTimeout(setupQuestionLevel, 1000);
+
+		if(current_module == "pan")
+			setTimeout(setupQuestionPan, 1000);
+
+		if(current_module == "mute")
+			setTimeout(setupQuestionMute, 1000);
+
+			//setting up the proper bypass routine
+			disconnectAll();
+	}
 
 
-	//setting up the proper bypass routine
-	disconnectAll();
 }
 
 function draw(){
 	background(10, 10, 20);
 
+	if(current_module != "mic"){
+		displayMixer();
+
+		button_play.display();
+		button_play.update();
+
+		button_question.display();
+		button_question.update();
+
+		button_check.display();
+		button_check.update();
+	}else{
+		displayRecordings();
+	}
+
+	button_bypass.display();
+	button_bypass.update();
+
+	button_response.display();
+	button_response.update();
+
+	//TITLE
+	fill(255);
+	textSize(height*0.05);
+	text('Ain\'t no '+current_module+' training hard enough', width*0.5, height*0.05);
+
+
+	if(canShowInstructions)
+		showInstructions();
+}
+
+function displayRecordings(){
+	for(var i = 0; i < recordings_number; i++){
+		fill(255);
+		// text(recordings_names[i], left_margin+spacing*i, faders_y);
+		recordings_buttons[i].display();
+		recordings_buttons[i].update();
+	}
+
+	fill(255);
+	if(isUser && canShowResponse)
+		text(recording_answer, width*0.5, height*0.75);
+}
+
+function displayMixer(){
 	for(var i = 0; i < faders.length; i++){
 		if(isUser && current_module == "level")
 			faders[i].display();
+
 		textSize(12);
 		noStroke();
 		fill(255);
 		text(channel_label[i], faders[i].pos.x, height*0.8);
 		if(canShowQuestion && faders[i].active){
 			if(current_module == "eq"){
-				var freq = 'low '+parseInt(eq3_question[i].frequency.value);
+				var freq = 'boosted frequency: '+parseInt(eq3_question[i].frequency.value);
 
 					if(abs(eq3_question[i].frequency.value - eq3[i].frequency.value) < question_range_eq){
 						fill(0, 150, 0);
@@ -238,27 +311,6 @@ function draw(){
 			buttons_solo[i].update();
 		}
 	}
-
-	button_bypass.display();
-	button_question.display();
-	button_response.display();
-	button_check.display();
-	button_play.display();
-
-	button_bypass.update();
-	button_question.update();
-	button_response.update();
-	button_check.update();
-	button_play.update();
-
-	//TITLE
-	fill(255);
-	textSize(height*0.05);
-	text('Ain\'t no '+current_module+' training hard enough', width*0.5, height*0.05);
-
-
-	if(canShowInstructions)
-		showInstructions();
 }
 
 function showInstructions(){
@@ -271,6 +323,24 @@ function showInstructions(){
 
 	text('press C to continue', width*0.5, height*0.7);
 
+}
+
+function playPickedRecording(){
+	for(var i = 0; i < recordings.length; i++){
+		recordings[i].volume.value = -200;
+	}
+
+	recordings[pickedRecording].volume.value = 0;
+}
+
+function checkRecordingAnswer(index){
+	console.log(index,'=',pickedRecording);
+	if(index == pickedRecording)
+		recording_answer = 'good';
+	else
+		recording_answer = 'bad';
+
+	canShowResponse = true;
 }
 
 function setupActiveChannels(){
@@ -379,10 +449,6 @@ function mousePressed(){
 }
 
 function keyPressed(){
-	// if(key == 'q' || key == 'Q'){
-	// 	canShowQuestion = !canShowQuestion;
-	// }
-
 	if(key == ' '){
 		togglePlay();
 	}
@@ -418,12 +484,15 @@ function connectRandom(){
 }
 
 function connectUser(){
-	for(var i = 0; i < track_number; i++){
-		samples[i].disconnect();
-		samples[i].connect(eq3[i]).connect(pan[i]).toMaster();
+	if(current_module != "mic"){
+		for(var i = 0; i < track_number; i++){
+			samples[i].disconnect();
+			samples[i].connect(eq3[i]).connect(pan[i]).toMaster();
+		}
 	}
 	isUser = true;
 	isBypass = false;
+	console.log(isUser);
 }
 
 function checkAnswers(){
@@ -527,7 +596,6 @@ function playSamples(){
 }
 
 function stopSamples(){
-	console.log('stopping');
 	for(var i = 0; i < samples.length; i++){
 		samples[i].playbackRate = 0;
 	}
@@ -535,11 +603,14 @@ function stopSamples(){
 
 function mouseReleased(){
 	mouseUp = true;
-	for(var i = 0; i < track_number; i++){
-		buttons_mute[i].listen();
-		buttons_solo[i].listen();
-		faders[i].ishandled = false;
-		knobs_pan[i].ishandled = false;
-		knobs_eq[i].ishandled = false;
+
+	if(current_module != "mic"){
+		for(var i = 0; i < track_number; i++){
+			buttons_mute[i].listen();
+			buttons_solo[i].listen();
+			faders[i].ishandled = false;
+			knobs_pan[i].ishandled = false;
+			knobs_eq[i].ishandled = false;
+		}
 	}
 }
