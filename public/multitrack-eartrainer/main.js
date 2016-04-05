@@ -127,8 +127,6 @@ function setup(){
 		knobs_pan[i] = new Knob(createVector(left_margin-width*0.025 + i*spacing + width*0.025, pan_y), height*0.03, i, null, "pan");
 	}
 
-
-
 	setupButtons();
 
 	//SET UP AUDIO PROCESSING OBJECTS
@@ -171,10 +169,10 @@ function setup(){
 				"volume" : default_volume
 			}).toMaster();
 
-			for(var i = 0; i < track_number; i++){
-				text_inputs[i] = createInput('CH #'+(i+1).toString());
-				text_inputs[i].id(i.toString());
-				text_inputs[i].input(updateChannelName);
+			for(var j = 0; j < track_number; j++){
+				text_inputs[j] = createInput('CH #'+(j+1).toString());
+				text_inputs[j].id(j.toString());
+				text_inputs[j].input(updateChannelName);
 			}
 		}
 
@@ -489,10 +487,11 @@ function connectUser(){
 			samples[i].disconnect();
 			samples[i].connect(eq3[i]).connect(pan[i]).toMaster();
 		}
+	}else{
+		recordings[pickedRecording].volume.value = 0;
 	}
 	isUser = true;
 	isBypass = false;
-	console.log(isUser);
 }
 
 function checkAnswers(){

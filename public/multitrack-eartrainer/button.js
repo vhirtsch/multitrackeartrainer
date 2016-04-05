@@ -104,11 +104,10 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 								togglePlay();
 							}else if(this.act == 'recording'){
 								if(isBypass){
-									if(recordings[this.index].volume.value == 0){
-										recordings[this.index].volume.value = -200;
-									}else{
-										recordings[this.index].volume.value = 0;
+									for(var i = 0; i < recordings.length; i++){
+										recordings[i].volume.value = -200;
 									}
+										recordings[this.index].volume.value = 0;
 								}else if(isUser){
 
 										checkRecordingAnswer(this.index);
