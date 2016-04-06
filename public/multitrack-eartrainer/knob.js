@@ -43,9 +43,14 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 		}
 
 		text(this.name, 0, -40);
-
 		if(this.type == 'eq3'){
 			text(parseInt(eq3[this.index].frequency.value), 0, 50);
+			if(faders[this.index].active){
+				rectMode(CENTER);
+				noFill();
+				stroke(this.col);
+				rect(0, height*0.15, width*0.05, height*0.4);
+			}
 		}
 
 		rotate(this.rotation);
@@ -59,8 +64,11 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 		ellipse(0, 0, this.rad, this.rad);
 		point(0, 0);
 		line(0, 0, 0, -this.rad*0.5);
+
 		pop();
 		strokeWeight(1);
+
+
 	}
 
 	this.updateEQ = function(_value){

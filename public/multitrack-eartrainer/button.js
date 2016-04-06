@@ -107,10 +107,12 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 									for(var i = 0; i < recordings.length; i++){
 										recordings[i].volume.value = -200;
 									}
-										recordings[this.index].volume.value = 0;
+									recordings[this.index].volume.value = default_volume;
 								}else if(isUser){
-
-										checkRecordingAnswer(this.index);
+									for(var i = 0; i < recordings.length; i++){
+										recordings[i].volume.value = -200;
+									}
+									checkRecordingAnswer(this.index);
 								}
 							}
 							mouseUp = false;
@@ -125,10 +127,9 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 						this.lastVolumeValue = samples[this.index].volume.value;
 
 						if(this.isMuted){
-							console.log('muting');
 							samples[this.index].volume.value = -100;
 						}else{
-							samples[this.index].volume.value = this.lastVolumeValue;
+							samples[this.index].volume.value = default_volume;
 						}
 					}
 
