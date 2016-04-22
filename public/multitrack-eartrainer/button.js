@@ -9,6 +9,9 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 	this.lastVolumeValue = 0;
 	this.index = _i;
 
+	if(this.act == 'play')
+		this.current_image = play_icon;
+
 	if(this.type != 'mute' && this.type != 'solo')
 	this.active = true;
 	else{
@@ -46,32 +49,42 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 	}
 
 	this.display = function(){
-		rectMode(CENTER);
-		textAlign(CENTER, CENTER);
-		textSize(this.font_size);
+		if(this.act != 'play'){
+			rectMode(CENTER);
+			textAlign(CENTER, CENTER);
+			textSize(this.font_size);
 
-		if(this.type == 'mute' || this.type == 'solo'){
-			fill(this.fill_col);
-			stroke(this.stroke_col);
+			if(this.type == 'mute' || this.type == 'solo'){
+				fill(this.fill_col);
+				stroke(this.stroke_col);
+			}else{
+				fill(this.fill_col);
+				stroke(this.stroke_col);
+			}
+
+			push();
+
+			translate(this.pos.x, this.pos.y);
+			rect(0, 0, this.w, this.h);
+			if(this.type == 'mute' || this.type == 'solo'){
+				fill(abs(255-this.fill_col));
+				stroke(abs(255-this.stroke_col));
+			}else{
+				fill(abs(255-this.fill_col));
+				stroke(abs(255-this.stroke_col));
+			}
+
+			text(this.n, 0, 0);
+			pop();
 		}else{
-			fill(this.fill_col);
-			stroke(this.stroke_col);
+			push();
+			imageMode(CENTER);
+			translate(this.pos.x, this.pos.y);
+			if(this.current_image != null)
+				image(this.current_image, 0, 0);
+			pop();
 		}
 
-		push();
-
-		translate(this.pos.x, this.pos.y);
-		rect(0, 0, this.w, this.h);
-		if(this.type == 'mute' || this.type == 'solo'){
-			fill(abs(255-this.fill_col));
-			stroke(abs(255-this.stroke_col));
-		}else{
-			fill(abs(255-this.fill_col));
-			stroke(abs(255-this.stroke_col));
-		}
-
-		text(this.n, 0, 0);
-		pop();
 	}
 
 	this.listen = function(){
@@ -119,21 +132,21 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 						}
 					}
 				}else{ //THIS HAPPENS ON MOUSE RELEASE - MUTE AND SOLO
-					if(this.type == 'mute'){
+					if(this.type == 'mute' && isBypass){
 						this.isSelected = !this.isSelected;
 						this.isMuted = !this.isMuted;
 
-						if(samples[this.index].volume.value > -100)
+						if(samples[this.index].volume.value > -200)
 						this.lastVolumeValue = samples[this.index].volume.value;
 
 						if(this.isMuted){
-							samples[this.index].volume.value = -100;
+							samples[this.index].volume.value = -200;
 						}else{
 							samples[this.index].volume.value = default_volume;
 						}
 					}
 
-					if(this.type == 'solo'){
+					if(this.type == 'solo' && isBypass){
 						if(!this.isSelected){
 
 							this.isSelected = true;

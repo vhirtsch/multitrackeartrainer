@@ -1,4 +1,5 @@
-// TODO: have a level meter
+var loaded =  false;
+var load_sum = 0;
 
 var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -43,6 +44,9 @@ var button_response;
 var button_check;
 var button_play;
 
+var play_icon;
+var pause_icon;
+
 var isUser;
 var isBypass = true;
 var canShowQuestion;
@@ -50,8 +54,12 @@ var canShowResponse;
 
 var default_volume;
 
+var question_levels = [];
+var user_levels = [];
+
 var question_eq_min;
 var question_eq_max;
+var eq_freq_values = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
 var question_fader_min;
 var question_fader_max;
@@ -62,6 +70,7 @@ var mouseUp;
 //POSITION
 var left_margin;
 var channels_y;
+var lol;
 var eq_y;
 var pan_y;
 var faders_y;
@@ -69,17 +78,27 @@ var spacing;
 
 var question_range_eq = 200;
 var question_range_pan = 0.2;
+var question_range_level = 2;
 
 var result_colors = [];
+
+var eq_boost = 10;
+var first_time_interaction = true;
 
 //Instructions
 var canShowInstructions = true;
 
+function preload(){
+	play_icon = loadImage('data/img/play_icon.png');
+	pause_icon = loadImage('data/img/pause_icon.png');
+}
+
 function setup(){
-
-	var back = createA('index.html', 'back to main page');
-
 	var cnv = createCanvas(windowWidth, windowHeight*0.85);
+	var back = createA('index.html', 'back to main page');
+	var instructions = createDiv('instructions');
+	instructions.position(width*0.9, height*0.025);
+	instructions.mouseClicked(toggleShowInstructions);
 
 	textAlign(CENTER);
 	result_colors[0] = color(255, 0, 0);
@@ -103,13 +122,14 @@ function setup(){
 	mouseUp = true;
 
 //SET UP POSITION VARIABLES FOR MIXER
-	left_margin = (width/track_number)*0.5;
+	left_margin = (width/track_number)*0.9;
 	channels_y = height*0.25;
 	eq_y = height*0.55;
 	pan_y = height*0.475;
 	faders_y = height*0.65;
-	spacing = width/track_number;
+	spacing = width/(track_number*1.2);
 	toggle_y = height*0.52;
+	toggle_y_solo = height*0.525;
 
 	if(current_module == "mic"){
 		left_margin = (width/recordings_number)*0.5;
@@ -119,9 +139,10 @@ function setup(){
 
 //SET UP USER INTERFACE
 	for(var i = 0; i < track_number; i++){
+		user_levels[i] = default_volume;
 		faders[i] = new Fader(createVector(left_margin + i*spacing, faders_y), height*0.1, i);
 		buttons_mute[i] = new Button('M', 'mute', 'mute', createVector(left_margin-width*0.015 + i*spacing, toggle_y), width*0.02, height*0.03, height*0.015, i);
-		buttons_solo[i] = new Button('Solo', 'solo', 'solo', createVector(left_margin + i*spacing, toggle_y), width*0.06, height*0.06, height*0.03, i);
+		buttons_solo[i] = new Button('S', 'solo', 'solo', createVector(left_margin + i*spacing, toggle_y_solo), height*0.08, height*0.08, height*0.03, i);
 
 		knobs_eq[i] = new Knob(createVector(left_margin-width*0.025 + i*spacing + 1 * width*0.025, eq_y), height*0.05, i, 1, "eq3");
 		knobs_pan[i] = new Knob(createVector(left_margin-width*0.025 + i*spacing + width*0.025, pan_y), height*0.03, i, null, "pan");
@@ -141,6 +162,10 @@ function setup(){
 				"loop" : true,
 				"volume" : -200
 			}).toMaster();
+
+			Tone.Buffer.onload = function(){
+				load_sum++;
+			}
 		}
 	}else{
 		for(var i = 0; i < track_number; i++){
@@ -149,14 +174,15 @@ function setup(){
 
 
 			pan[i] = new Tone.Panner(0.5).toMaster();
-			// eq3[i] = new Tone.EQ3(0, 0, 0).toMaster();
-			eq3[i] = new Tone.Filter(0, "peaking").toMaster();
-			eq3[i].gain.value = 10;
+			eq3[i] = new Tone.Filter(1000, "peaking").toMaster();
+			eq3[i].gain.value = 0;
 
 			pan_question[i] = new Tone.Panner(0.5).toMaster();
 			eq3_question[i] = new Tone.Filter(2000, "peaking").toMaster();
-			console.log(eq3_question[i]);
-			eq3_question[i].gain.value = 10;
+			if(current_module == 'eq')
+				eq3_question[i].gain.value = 10;
+			else
+				eq3_question[i].gain.value = 0;
 
 			pan_bypass[i] = new Tone.Panner(0.5).toMaster();
 			eq3_bypass[i] = new Tone.Filter(0, "peaking").toMaster();
@@ -169,6 +195,12 @@ function setup(){
 				"loop" : true,
 				"volume" : default_volume
 			}).toMaster();
+
+			Tone.Buffer.onload = function(){
+				load_sum++;
+			}
+
+			level_meters[i] = new Tone.Meter();
 		}
 
 		for(var j = 0; j < track_number; j++){
@@ -199,37 +231,64 @@ function setup(){
 }
 
 function draw(){
-	background(10, 10, 20);
+	background(0);
 
-	if(current_module != "mic"){
-		displayMixer();
+	if(loaded){
+		if(current_module != "mic"){
+			displayMixer();
 
-		button_play.display();
-		button_play.update();
+			button_play.display();
+			button_play.update();
 
-		button_question.display();
-		button_question.update();
+			button_question.display();
+			button_question.update();
+		}else{
+			displayRecordings();
+		}
+
+		button_bypass.display();
+		button_bypass.update();
+
+		button_response.display();
+		button_response.update();
+
+		button_check.display();
+		button_check.update();
+
+		if(canShowInstructions)
+			showInstructions();
 	}else{
-		displayRecordings();
+		showLoadingAnimation();
+		checkForLoadSamples();
 	}
-
-	button_bypass.display();
-	button_bypass.update();
-
-	button_response.display();
-	button_response.update();
-
-	button_check.display();
-	button_check.update();
 
 	//TITLE
 	fill(255);
 	textSize(height*0.05);
-	text('Ain\'t no '+current_module+' training hard enough', width*0.5, height*0.05);
+	text(current_module.toUpperCase(), width*0.5, height*0.05);
+}
 
+function showLoadingAnimation(){
+	var str = '.';
 
-	if(canShowInstructions)
-		showInstructions();
+	if(frameCount % 60 < 20)
+		str = '.';
+	else if(frameCount % 60 < 40)
+		str = '..';
+	else
+		str = '...';
+
+		text("loading baby"+str, width*0.5, height*0.5);
+}
+
+function checkForLoadSamples(){
+	if(current_module != 'mic'){
+		if(load_sum >= samples.length)
+			loaded = true;
+	}else{
+		if(load_sum >= recordings.length)
+			loaded = true;
+	}
 }
 
 function displayRecordings(){
@@ -250,13 +309,20 @@ function displayRecordings(){
 
 function displayMixer(){
 	for(var i = 0; i < faders.length; i++){
+				drawChannelBoxes(i);
 		if(isUser && current_module == "level")
 			faders[i].display();
 
 		textSize(12);
 		noStroke();
 		fill(255);
-		text(channel_label[i], faders[i].pos.x, height*0.8);
+
+		//level meters
+		stroke(255);
+		if(samples[0].playbackRate == 1)
+			drawLevelMeters(i);
+
+		noStroke();
 		if(canShowQuestion && faders[i].active){
 			if(current_module == "eq"){
 				var freq = 'boosted frequency: '+parseInt(eq3_question[i].frequency.value);
@@ -284,8 +350,14 @@ function displayMixer(){
 					fill(150, 0, 0);
 					text('incorrectly muted!', faders[i].pos.x, height*0.85);
 				}
-			}else if(current_module == "levels"){
-
+			}else if(current_module == "level"){
+				if(abs(question_levels[i] - user_levels[i]) < question_range_level){
+					fill(0, 150, 0);
+					text('correct level! '+parseInt(question_levels[i]), faders[i].pos.x, height*0.85);
+				}else{
+					fill(150, 0, 0);
+					text('incorrect level... it was: '+parseInt(question_levels[i]), faders[i].pos.x, height*0.85);
+				}
 			}
 		}
 
@@ -295,7 +367,8 @@ function displayMixer(){
 			if(current_module == "eq"){
 				knobs_eq[i].display();
 				knobs_eq[i].update();
-				text('find the boosted frequency on the highlighted channel!', width*0.5, height*0.4);
+				noStroke();
+				text('find the boosted frequency on the highlighted channel', width*0.5, height*0.4);
 			}
 
 			if(current_module == "mute"){
@@ -317,15 +390,37 @@ function displayMixer(){
 }
 
 function showInstructions(){
-
 	fill(0);
 	stroke(255);
 	rect(width*0.5, height*0.5, width*0.8, height*0.8);
 	fill(255);
 	text('INSTRUCTIONS', width*0.5, height*0.3);
 
-	text('press C to continue', width*0.5, height*0.7);
+	text('click anywhere to dismiss', width*0.5, height*0.7);
+}
 
+function drawLevelMeters(i){
+	rectMode(CORNER);
+	stroke(255);
+	fill(255);
+	rect(faders[i].pos.x-width*0.0125, height*0.95, width*0.025, map(max(-60, parseInt(level_meters[i].getDb())), -60, 0, 0, -height*0.45));
+}
+
+function drawChannelBoxes(i){
+	rectMode(CENTER);
+
+	if(current_module == "eq"){
+		for (var j = height*0.45; j <= height*0.7+height*0.25; j++) {
+			var inter = map(j, height*0.7, height*0.7+height*0.5, 0, 1);
+			var c = lerp(50+map(knobs_eq[i].rotation, -radians(135), radians(135), -50, 100), +map(knobs_eq[i].rotation, -radians(135), radians(135), 155, 455), inter);
+			stroke(c);
+			line(faders[i].pos.x-width*0.045, j, faders[i].pos.x+width*0.045, j);
+		}
+	}
+
+	noFill();
+	stroke(255);
+	rect(faders[i].pos.x, height*0.7, width*0.09, height*0.5);
 }
 
 function playPickedRecording(){
@@ -381,16 +476,23 @@ function updateChannelName(){
 function setupQuestionEQ(){
 		for(var i = 0; i < active_channels; i++){
 			var ind = active_channels_indexes[i];
-			eq3_question[ind].frequency.value = random(10000, 11000);
+			eq3_question[ind].frequency.value = eq_freq_values[Math.floor(Math.random()*eq_freq_values.length)];
 			eq3_question[ind].gain.value = 10;
-			console.log('eq',ind,'at',eq3_question[ind].frequency.value);
+			knobs_eq[i].rotation = 0;
+			eq3[i].frequency.value = 1000;
 		}
 }
 
 function setupQuestionLevel(){
-	for(var i = 0; i < active_channels; i++){
-		var ind = active_channels_indexes[i];
-		//TODO: maybe it's better to actually figure out the fucking volume as a separate bus thing
+	for(var i = 0; i < track_number; i++){
+		var question_level = default_volume;
+		for(var j = 0; j < active_channels; j++){
+				var ind = active_channels_indexes[j];
+					if(i == ind)
+						question_level = random(default_volume*0.25, default_volume*1.75);
+		}
+
+		question_levels.push(question_level);
 	}
 }
 
@@ -402,11 +504,6 @@ function setupQuestionPan(){
 }
 
 function setupQuestionMute(){
-	// for(var i = 0; i < active_channels; i++){
-	// 	var ind = active_channels_indexes[i];
-	// 	faders[ind].question_muted = true;
-	// }
-
 	faders[Math.floor(Math.random()*active_channels_indexes.length)].question_muted = true;
 }
 
@@ -433,6 +530,10 @@ function setupButtons(){
 }
 
 function mousePressed(){
+	if(canShowInstructions)
+		canShowInstructions = false;
+
+
 	for(var i = 0; i < track_number; i++){
 		if(mouseX < faders[i].getHandlePos().x + faders[i].getHandleWidth() && mouseX > faders[i].getHandlePos().x - faders[i].getHandleWidth()){
 			if(mouseY < faders[i].getHandlePos().y + faders[i].getHandleHeight() && mouseY > faders[i].getHandlePos().y - faders[i].getHandleHeight()){
@@ -461,14 +562,14 @@ function mousePressed(){
 	}
 }
 
+function toggleShowInstructions(){
+	canShowInstructions = true;
+}
+
 function keyPressed(){
 	if(key == ' '){
 		togglePlay();
 	}
-
-	if(key == 'c' || key == 'C')
-		canShowInstructions = !canShowInstructions;
-
 }
 
 function disconnectAll(){
@@ -476,7 +577,7 @@ function disconnectAll(){
 		for(var i = 0; i < track_number; i++){
 			samples[i].disconnect();
 			samples[i].volume.value = default_volume;
-			samples[i].connect(eq3_bypass[i]).connect(pan_bypass[i]).toMaster();
+			samples[i].connect(eq3_bypass[i]).connect(pan_bypass[i]).connect(level_meters[i]).toMaster();
 
 
 			buttons_mute[i].isMuted = false;
@@ -500,6 +601,16 @@ function connectRandom(){
 		samples[i].disconnect();
 		samples[i].connect(eq3_question[i]).connect(pan_question[i]).toMaster();
 	}
+
+	if(current_module == 'level'){
+		for(var i = 0; i < track_number; i++){
+			// var ind = active_channels_indexes[i];
+			samples[i].volume.value = question_levels[i];
+			// console.log(ind);
+			// console.log(question_levels[ind]);
+		}
+	}
+
 	isUser = false;
 	isBypass = false;
 }
@@ -521,27 +632,34 @@ function checkAnswers(){
 	canShowQuestion = true;
 	button_check.state = 1;
 	button_check.n = 'next';
-
+	j = 0;
 	for(var i = 0; i < active_channels_indexes.length; i++){
+		var ind = active_channels_indexes[i];
 		// console.log('act',active_channels_indexes[i]);
 		if(current_module == "eq"){
-			if(abs(eq3_question[active_channels_indexes[i]].frequency.value - eq3[active_channels_indexes[i]].frequency.value) < question_range_eq){
-				knobs_eq[active_channels_indexes[i]].result_col = result_colors[2];
+			if(abs(eq3_question[ind].frequency.value - eq3[ind].frequency.value) < question_range_eq){
+				knobs_eq[ind].result_col = result_colors[2];
 				// console.log('good');
-			}else if(abs(eq3_question[active_channels_indexes[i]].frequency.value - eq3[active_channels_indexes[i]].frequency.value) < question_range_eq*2){
-				knobs_eq[active_channels_indexes[i]].result_col = result_colors[1];
+			}else if(abs(eq3_question[ind].frequency.value - eq3[ind].frequency.value) < question_range_eq*2){
+				knobs_eq[ind].result_col = result_colors[1];
 				// console.log('bad');
 			}else{
-				knobs_eq[active_channels_indexes[i]].result_col = result_colors[0];
+				knobs_eq[ind].result_col = result_colors[0];
 				// console.log('ugly');
 			}
 		}else if(current_module == "pan"){
 
 		}else if(current_module == "level"){
-
+			if(abs(samples[ind].volume.value - question_levels[j]) < question_range_level){
+				console.log('did right');
+			}else{
+				console.log('did not do right');
+			}
 		}else if(current_module == "mute"){
 
 		}
+
+		j++; //for accessing the questions_levels array
 	}
 }
 
@@ -550,18 +668,12 @@ function deactivateChannels(){
 	for(var i = 0; i < track_number; i++){
 		faders[i].active = false;
 		faders[i].col = 100;
+		faders[i].handlepos = faders[i].handle_startingpos.copy();
+		faders[i].vol = default_volume;
 
-		knobs_eq[i][0].active = false;
-		knobs_eq[i][0].col = 100;
-		knobs_eq[i][0].result_col = 100;
-
-		knobs_eq[i][1].active = false;
-		knobs_eq[i][1].col = 100;
-		knobs_eq[i][1].result_col = 100;
-
-		knobs_eq[i][2].active = false;
-		knobs_eq[i][2].col = 100;
-		knobs_eq[i][2].result_col = 100;
+		knobs_eq[i].active = false;
+		knobs_eq[i].col = 100;
+		knobs_eq[i].result_col = 100;
 
 		knobs_pan[i].active = false;
 		knobs_pan[i].col = 100;
@@ -598,9 +710,13 @@ function resetQuestions(){
 		for(var i = 0; i < active_channels; i++){
 			setupActiveChannels();
 		}
+
+		setupButtons();
 	}
 
-
+	button_question.active = false;
+	button_response.active = false;
+	button_bypass.active = true;
 }
 
 function setRandomValues(){
@@ -615,10 +731,12 @@ function togglePlay(){
 	if(!isPlaying){
 		playSamples();
 		button_play.n = 'pause';
+		button_play.current_image = pause_icon;
 		isPlaying = true;
 	}else{
 		stopSamples();
 		button_play.n  = 'play';
+		button_play.current_image = play_icon;
 		isPlaying = false;
 	}
 }

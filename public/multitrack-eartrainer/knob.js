@@ -21,8 +21,15 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 
 	this.update = function(){
 		if(this.ishandled && this.active){
+			if(this.first_time_interaction){
+				for(var i = 0; i < eq3.length; i++){
+					eq3[i].gain.value = eq_boost;
+				}
+				this.first_time_interaction = false;
+			}
 			this.rotation = map((mouseX - this.pos.x), -this.pos.x*0.125, (width-this.pos.x)*0.125, this.min, this.max);
 			this.rotation = min(max(this.rotation, this.min), this.max);
+			console.log(this.rotation);
 
 			if(this.type == "eq3" && isUser)
 				this.updateEQ(this.rotation);
@@ -42,7 +49,6 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 			fill(this.result_col);
 		}
 
-		text(this.name, 0, -40);
 		if(this.type == 'eq3'){
 			text(parseInt(eq3[this.index].frequency.value), 0, 50);
 			if(faders[this.index].active){
@@ -59,7 +65,7 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 		}else{
 			stroke(this.result_col);
 		}
-		strokeWeight(4);
+		strokeWeight(3);
 		noFill();
 		ellipse(0, 0, this.rad, this.rad);
 		point(0, 0);
@@ -72,7 +78,9 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 	}
 
 	this.updateEQ = function(_value){
-			eq3[this.index].frequency.value = map(_value, this.min, this.max, 20, 20000);
+		var snapped_value = parseInt(map(_value, this.min, this.max, 0, eq_freq_values.length-1));
+		console.log(snapped_value);
+		eq3[this.index].frequency.value = eq_freq_values[snapped_value];
 	}
 
 	this.updatePan = function(_value){
