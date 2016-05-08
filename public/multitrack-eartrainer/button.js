@@ -8,9 +8,7 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 	this.isMuted = false;
 	this.lastVolumeValue = 0;
 	this.index = _i;
-
-	if(this.act == 'play')
-		this.current_image = play_icon;
+	this.current_image = play_icon;
 
 	if(this.type != 'mute' && this.type != 'solo')
 	this.active = true;
@@ -65,6 +63,8 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 			push();
 
 			translate(this.pos.x, this.pos.y);
+			if(!this.isSelected)
+				noFill();
 			rect(0, 0, this.w, this.h);
 			if(this.type == 'mute' || this.type == 'solo'){
 				fill(abs(255-this.fill_col));
@@ -82,6 +82,7 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 			translate(this.pos.x, this.pos.y);
 			if(this.current_image != null)
 				image(this.current_image, 0, 0);
+
 			pop();
 		}
 

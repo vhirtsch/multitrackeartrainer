@@ -23,13 +23,12 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 		if(this.ishandled && this.active){
 			if(this.first_time_interaction){
 				for(var i = 0; i < eq3.length; i++){
-					eq3[i].gain.value = eq_boost;
+					eq3[i].gain.value = eq_gain_value;
 				}
 				this.first_time_interaction = false;
 			}
 			this.rotation = map((mouseX - this.pos.x), -this.pos.x*0.125, (width-this.pos.x)*0.125, this.min, this.max);
 			this.rotation = min(max(this.rotation, this.min), this.max);
-			console.log(this.rotation);
 
 			if(this.type == "eq3" && isUser)
 				this.updateEQ(this.rotation);
@@ -51,12 +50,6 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 
 		if(this.type == 'eq3'){
 			text(parseInt(eq3[this.index].frequency.value), 0, 50);
-			if(faders[this.index].active){
-				rectMode(CENTER);
-				noFill();
-				stroke(this.col);
-				rect(0, height*0.15, width*0.05, height*0.4);
-			}
 		}
 
 		rotate(this.rotation);
@@ -79,7 +72,6 @@ var Knob = function(_pos, _rad, _index, _band, _type){
 
 	this.updateEQ = function(_value){
 		var snapped_value = parseInt(map(_value, this.min, this.max, 0, eq_freq_values.length-1));
-		console.log(snapped_value);
 		eq3[this.index].frequency.value = eq_freq_values[snapped_value];
 	}
 

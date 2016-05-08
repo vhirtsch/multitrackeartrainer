@@ -38,7 +38,7 @@ var Fader = function(_pos, _height, _index){
 		if(isUser && !buttons_mute[this.index].isMuted){
 			samples[this.index].volume.value = this.vol;
 			user_levels[this.index] = this.vol;
-		}	
+		}
 	}
 
 	this.moveFader = function(){
