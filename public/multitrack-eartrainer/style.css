@@ -24,12 +24,17 @@ input{
 }
 
 img{
-  width: 10%;
+  width: 15%;
+}
+
+#container{
+padding-left: 22.5%;
+height: 100%;
+width: 100%;
 }
 
 .module{
   display: inline;
-  float: left;
   color:white;
   margin: 10px;
 }

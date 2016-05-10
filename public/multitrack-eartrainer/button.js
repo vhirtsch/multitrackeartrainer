@@ -42,7 +42,7 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 			this.fill_col = 0;
 		}
 
-		if(this.act == "check" || this.act == "play" || this.act == 'recording')
+		if(this.act == "check" || this.act == "play" || (this.act == 'recording' && isBypass))
 		this.isSelected = false;
 	}
 
@@ -60,11 +60,26 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 				stroke(this.stroke_col);
 			}
 
+			if(this.type == 'recording' && recordings[this.index].volume.value > -200 && isBypass){
+				strokeWeight(5);
+			}else{
+				strokeWeight(1);
+			}
+
+
 			push();
 
 			translate(this.pos.x, this.pos.y);
 			if(!this.isSelected)
 				noFill();
+
+
+			if(this.type == 'recording' && this.isSelected){
+				stroke(0, 100, 0);
+			}else{
+				stroke(this.stroke_col);
+			}
+
 			rect(0, 0, this.w, this.h);
 			if(this.type == 'mute' || this.type == 'solo'){
 				fill(abs(255-this.fill_col));
@@ -74,6 +89,7 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 				stroke(abs(255-this.stroke_col));
 			}
 
+			strokeWeight(1);
 			text(this.n, 0, 0);
 			pop();
 		}else{
@@ -104,11 +120,11 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 
 						if(mouseUp){
 							if(this.act == "bypass")
-							disconnectAll();
+								disconnectAll();
 							else if(this.act == "question")
-							connectRandom();
+								connectRandom();
 							else if(this.act == "response")
-							connectUser();
+								connectUser();
 							else if(this.act == "check"){
 								if(this.state == 0)
 									checkAnswers();
@@ -123,10 +139,12 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 									}
 									recordings[this.index].volume.value = default_volume;
 								}else if(isUser){
-									for(var i = 0; i < recordings.length; i++){
-										recordings[i].volume.value = -200;
+									// checkRecordingAnswer(this.index);
+									selected_recording = this.index;
+									for(var i = 0; i < recordings_buttons.length; i++){
+										recordings_buttons[i].isSelected = false;
 									}
-									checkRecordingAnswer(this.index);
+									this.isSelected = true;
 								}
 							}
 							mouseUp = false;
@@ -163,7 +181,7 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 									buttons_solo[i].isSelected = false;
 								}else{ //just in case our button is muted, we unmute it
 									if(buttons_mute[i].isMuted){
-										samples[this.index].volume.value = buttons_mute[i].lastVolumeValue;
+										samples[this.index].volume.value = default_volume;
 										buttons_mute[i].isMuted = false;
 										buttons_mute[i].isSelected = false;
 									}
@@ -172,7 +190,7 @@ var Button = function(_name, _action, _type, _pos, _w, _h, _font_size, _i){
 						}else{//if it is already selected, it means we have to deselect it and restore all other to their previous levels
 							for(var i = 0; i < buttons_mute.length; i++){
 								buttons_mute[i].isMuted = false;
-								samples[i].volume.value = buttons_mute[i].lastVolumeValue;
+								samples[i].volume.value = default_volume;
 							}
 							this.isSelected = false;
 						}

@@ -14,6 +14,8 @@ var recordings_names = ["A-B", "Close Mics", "NOS", "ORTF", "Room Mics"];
 var pickedRecording;
 var recording_answer;
 
+var selected_recording = -1;
+
 var active_channels_indexes = [];
 
 var text_inputs = [];
@@ -244,14 +246,16 @@ function draw(){
 		if(current_module != "mic"){
 			displayMixer();
 
-			button_play.display();
-			button_play.update();
+
 
 			button_question.display();
 			button_question.update();
 		}else{
 			displayRecordings();
 		}
+
+		button_play.display();
+		button_play.update();
 
 		button_bypass.display();
 		button_bypass.update();
@@ -309,8 +313,8 @@ function displayRecordings(){
 	if(isUser && canShowResponse)
 		text(recording_answer, width*0.5, height*0.75);
 
-	if(canShowQuestion){
-			text('the correct recording is: '+recordings_names[pickedRecording], width*0.5, height*0.6);
+	if(canShowQuestion && selected_recording != pickedRecording){
+			text('the correct recording is: '+recordings_names[pickedRecording], width*0.5, height*0.8);
 	}
 }
 
@@ -401,13 +405,14 @@ function displayMixer(){
 }
 
 function showInstructions(){
-	fill(0);
+	fill(0, 0, 20);
 	stroke(255);
 	rect(width*0.5, height*0.5, width*0.8, height*0.8);
 	fill(255);
-	text('INSTRUCTIONS', width*0.5, height*0.3);
-
-	text('click anywhere to dismiss', width*0.5, height*0.7);
+	noStroke();
+	text('INSTRUCTIONS', width*0.5, height*0.25);
+	text("Start in LISTEN mode.\nFamiliarize yourself with all channels - try to identify the instrument you are hearing and name each channel accordingly.\n\nSwitch to QUESTION mode.\nA 10dB EQ boost will be applied to only 2 of the channels. Listen carefully to the change in timbre of the 2 active channels.\n\nMove on to RESPONSE mode.\nYou will be asked to match the EQ change you just heard in QUESTION mode.\nUse the knobs on the 2 active channels to find the frequency ranges that have the 10dB boosts.\n\nClick SUBMIT and check your answer.\n\nHave fun!", width*0.5, height*0.4);
+	text('click anywhere to dismiss', width*0.2, height*0.85);
 }
 
 function drawLevelMeters(i){
@@ -447,9 +452,9 @@ function playPickedRecording(){
 function checkRecordingAnswer(index){
 	console.log(index,'=',pickedRecording);
 	if(index == pickedRecording)
-		recording_answer = 'good';
+		recording_answer = 'correct!';
 	else
-		recording_answer = 'bad';
+		recording_answer = 'wrong...';
 
 	canShowResponse = true;
 }
@@ -489,11 +494,11 @@ function updateChannelName(){
 function setupQuestionEQ(){
 	for(var i = 0; i < faders.length; i++){
 		knobs_eq[i].rotation = 0;
-		eq3[i].frequency.value = 1000;
+		eq3[i].frequency.value = 0;
 		eq3_question[i].gain.value = 0;
-		eq3_question[i].frequency.value = 1000;
+		eq3_question[i].frequency.value = 0;
 	}
-	
+
 		for(var i = 0; i < active_channels; i++){
 			var ind = active_channels_indexes[i];
 			eq3_question[ind].frequency.value = eq_freq_values[Math.floor(Math.random()*eq_freq_values.length)];
@@ -542,7 +547,12 @@ function setupButtons(){
 	button_question = new Button("Question", "question", "channel", createVector(width*0.5, channels_y), width*0.1, height*0.075, height*0.03);
 	buttons_toggle_channel.push(button_question);
 
-	button_response = new Button("Response", "response", "channel", createVector(width*0.7, channels_y), width*0.1, height*0.075, height*0.03);
+	if(current_module != 'mic'){
+			button_response = new Button("Response", "response", "channel", createVector(width*0.7, channels_y), width*0.1, height*0.075, height*0.03);
+	}else{
+		button_response = new Button("Choose", "response", "channel", createVector(width*0.7, channels_y), width*0.1, height*0.075, height*0.03);
+	}
+
 	buttons_toggle_channel.push(button_response);
 
 	button_check = new Button("Submit", "check", "check", createVector(width*0.85, channels_y), width*0.05, height*0.05, height*0.025);
@@ -607,8 +617,12 @@ function disconnectAll(){
 		}
 	}else{
 		for(var i = 0; i < recordings.length; i++){
-			recordings[i].volume.value = - 200;
+			recordings[i].volume.value = -200;
 		}
+
+		button_play.n  = 'play';
+		button_play.current_image = play_icon;
+		isPlaying = false;
 	}
 
 	isUser = false;
@@ -618,6 +632,7 @@ function disconnectAll(){
 function connectRandom(){
 	for(var i = 0; i < track_number; i++){
 		samples[i].disconnect();
+		samples[i].volume.value = default_volume;
 		samples[i].connect(eq3_question[i]).connect(pan_question[i]).connect(level_meters[i]).toMaster();
 	}
 
@@ -636,9 +651,14 @@ function connectUser(){
 	if(current_module != "mic"){
 		for(var i = 0; i < track_number; i++){
 			samples[i].disconnect();
+			samples[i].volume.value = default_volume;
+			console.log('changed to ', samples[i].volume.value);
 			samples[i].connect(eq3[i]).connect(pan[i]).connect(level_meters[i]).toMaster();
 		}
 	}else{
+		for(var i = 0; i < recordings.length; i++){
+			recordings[i].volume.value = -200;
+		}
 		recordings[pickedRecording].volume.value = default_volume;
 	}
 	isUser = true;
@@ -649,34 +669,39 @@ function checkAnswers(){
 	canShowQuestion = true;
 	button_check.state = 1;
 	button_check.n = 'next';
-	j = 0;
-	for(var i = 0; i < active_channels_indexes.length; i++){
-		var ind = active_channels_indexes[i];
-		// console.log('act',active_channels_indexes[i]);
-		if(current_module == "eq"){
-			if(abs(eq3_question[ind].frequency.value - eq3[ind].frequency.value) < question_range_eq){
-				knobs_eq[ind].result_col = result_colors[2];
-				// console.log('good');
-			}else if(abs(eq3_question[ind].frequency.value - eq3[ind].frequency.value) < question_range_eq*2){
-				knobs_eq[ind].result_col = result_colors[1];
-				// console.log('bad');
-			}else{
-				knobs_eq[ind].result_col = result_colors[0];
-				// console.log('ugly');
-			}
-		}else if(current_module == "pan"){
 
-		}else if(current_module == "level"){
-			if(abs(samples[ind].volume.value - question_levels[j]) < question_range_level){
-				console.log('did right');
-			}else{
-				console.log('did not do right');
-			}
-		}else if(current_module == "mute"){
+	if(current_module != 'mic'){
+		j = 0;
+		for(var i = 0; i < active_channels_indexes.length; i++){
+			var ind = active_channels_indexes[i];
+			// console.log('act',active_channels_indexes[i]);
+			if(current_module == "eq"){
+				if(abs(eq3_question[ind].frequency.value - eq3[ind].frequency.value) < question_range_eq){
+					knobs_eq[ind].result_col = result_colors[2];
+					// console.log('good');
+				}else if(abs(eq3_question[ind].frequency.value - eq3[ind].frequency.value) < question_range_eq*2){
+					knobs_eq[ind].result_col = result_colors[1];
+					// console.log('bad');
+				}else{
+					knobs_eq[ind].result_col = result_colors[0];
+					// console.log('ugly');
+				}
+			}else if(current_module == "pan"){
 
+			}else if(current_module == "level"){
+				if(abs(samples[ind].volume.value - question_levels[j]) < question_range_level){
+					console.log('did right');
+				}else{
+					console.log('did not do right');
+				}
+			}else if(current_module == "mute"){
+
+			}
+
+			j++; //for accessing the questions_levels array
 		}
-
-		j++; //for accessing the questions_levels array
+	}else{
+		checkRecordingAnswer(selected_recording);
 	}
 }
 
@@ -752,16 +777,37 @@ function setRandomValues(){
 }
 
 function togglePlay(){
-	if(!isPlaying){
-		playSamples();
-		button_play.n = 'pause';
-		button_play.current_image = pause_icon;
-		isPlaying = true;
+	if(current_module != 'mic'){
+		if(!isPlaying){
+			playSamples();
+			button_play.n = 'pause';
+			button_play.current_image = pause_icon;
+			isPlaying = true;
+		}else{
+			stopSamples();
+			button_play.n  = 'play';
+			button_play.current_image = play_icon;
+			isPlaying = false;
+		}
 	}else{
-		stopSamples();
-		button_play.n  = 'play';
-		button_play.current_image = play_icon;
-		isPlaying = false;
+		if(!isPlaying){
+			for(var i = 0; i < recordings.length; i++){
+				recordings[i].playbackRate.value = 1;
+				recordings[i].volume.value = -200;
+			}
+			recordings[0].volume.value = default_volume;
+			button_play.n = 'pause';
+			button_play.current_image = pause_icon;
+			isPlaying = true;
+		}else{
+			for(var i = 0; i < recordings.length; i++){
+				recordings[i].playbackRate.value = 0;
+				recordings[i].volume.value = -200;
+			}
+			button_play.n  = 'play';
+			button_play.current_image = play_icon;
+			isPlaying = false;
+		}
 	}
 }
 
