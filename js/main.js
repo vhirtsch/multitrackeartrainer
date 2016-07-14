@@ -96,8 +96,8 @@ var first_time_interaction = true;
 var canShowInstructions = true;
 
 function preload(){
-	play_icon = loadImage('data/img/play_icon.png');
-	pause_icon = loadImage('data/img/pause_icon.png');
+	play_icon = loadImage('img/play_icon.png');
+	pause_icon = loadImage('img/pause_icon.png');
 }
 
 function setup(){
@@ -165,7 +165,7 @@ function setup(){
 			recordings_buttons[i] = new Button(recordings_names[i], 'recording', 'recording', createVector(left_margin + i*spacing, toggle_y), width*0.1, height*0.06, height*0.03, i);
 
 			recordings[i] = new Tone.Player({
-				"url" : "./data/recordings/"+i+".wav",
+				"url" : "./audio/recordings/"+i+".wav",
 				"playbackRate" : 1,
 				"autostart": true,
 				"loop" : true,
@@ -198,7 +198,7 @@ function setup(){
 			eq3_bypass[i].gain.value = 0;
 
 			samples[i] = new Tone.Player({
-				"url" : "./data/"+(i+1)+".wav",
+				"url" : "audio/"+(i+1)+".wav",
 				"playbackRate" : 0,
 				"autostart" : true,
 				"loop" : true,
